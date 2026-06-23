@@ -197,7 +197,10 @@
 <div class="overlay" id="ovProg"><div class="modal" style="width:min(420px,94vw)"><div class="progress" id="progBody"></div></div></div>
 <div class="overlay" id="ovDet"><div class="modal">
   <div class="head">
-    <div><h2 id="detTitle" style="font-size:22px"></h2><div class="sub" id="detSub" style="color:var(--muted);font-size:13px"></div></div>
+    <div>
+      <span style="display:inline-flex;align-items:center;gap:8px"><h2 id="detTitle" style="font-size:22px"></h2>
+      <button onclick="renomear()" title="Renomear" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px">✏️</button></span>
+      <div class="sub" id="detSub" style="color:var(--muted);font-size:13px"></div></div>
     <button class="x" onclick="fechar('ovDet')">×</button>
   </div>
   <div class="body">
@@ -422,6 +425,18 @@ async function toggleP(id,nome){
   const {error}=await sb.from('calls').update({participantes:arr}).eq('id',id);
   if(error){ alert('Erro ao salvar participante: '+error.message); return; }
   c.participantes=arr; abrir(id);
+}
+async function renomear(){
+  if(!CUR) return;
+  const novo=prompt('Novo nome da call (cliente):', CUR.cliente||'');
+  if(novo===null) return;
+  const nome=novo.trim()||null;
+  const {error}=await sb.from('calls').update({cliente:nome}).eq('id',CUR.id);
+  if(error){ alert('Erro ao renomear: '+error.message); return; }
+  CUR.cliente=nome;
+  const c=CALLS.find(x=>x.id===CUR.id); if(c) c.cliente=nome;
+  document.getElementById('detTitle').textContent=nome||'Cliente não identificado';
+  render();
 }
 function relFiltradas(){
   const q=(document.getElementById('relBusca')?.value||'').toLowerCase().trim();
