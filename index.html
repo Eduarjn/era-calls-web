@@ -239,7 +239,7 @@ function mostrarApp(user){
 async function sair(){ await sb.auth.signOut(); location.reload(); }
 
 function view(v){
-  ['calls','mkt','vend'].forEach(x=>{
+  ['calls','mkt','vend','rel'].forEach(x=>{
     document.getElementById('view-'+x).classList.toggle('hidden',x!==v);
     document.getElementById('nav-'+x).classList.toggle('active',x===v);
   });
