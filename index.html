@@ -57,6 +57,11 @@
   .badge{font-size:11px;font-weight:700;padding:5px 10px;border-radius:999px}
   .b-pos{background:rgba(65,123,90,.14);color:#2A6045} .b-neu{background:rgba(122,88,64,.14);color:#7A5840} .b-neg{background:rgba(192,57,43,.12);color:#C0392B}
   .b-score{background:rgba(75,63,114,.12);color:#4B3F72}
+  .periodos{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+  .per{padding:7px 15px;border-radius:999px;background:#fff;border:1px solid var(--line);color:var(--muted);cursor:pointer;font-weight:600;font-size:13px}
+  .per.active{background:var(--navy);color:#fff;border-color:transparent}
+  .diahead{display:flex;align-items:baseline;gap:12px;margin:22px 0 12px;flex-wrap:wrap}
+  .diahead h3{font-size:18px;font-family:'Quicksand'} .diasub{color:var(--muted);font-size:13px}
 
   .panel{border-radius:16px;padding:20px;margin-bottom:16px;animation:rise .4s both}
   .panel h3{font-size:18px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
@@ -134,8 +139,14 @@
         <button class="btn btn-primary" id="btnEnviar" style="margin-top:14px" onclick="enviar()" disabled>⚡ Enviar e analisar</button>
       </div>
       <div class="stats" id="stats"></div>
+      <div class="periodos">
+        <button class="per" data-p="hoje" onclick="setPeriodo('hoje')">Hoje</button>
+        <button class="per" data-p="7d" onclick="setPeriodo('7d')">7 dias</button>
+        <button class="per" data-p="30d" onclick="setPeriodo('30d')">30 dias</button>
+        <button class="per active" data-p="tudo" onclick="setPeriodo('tudo')">Tudo</button>
+      </div>
       <h2 style="font-size:20px;margin-bottom:14px">Calls analisadas</h2>
-      <div class="grid" id="grid"></div>
+      <div id="dias"></div>
       <div class="empty hidden" id="empty">Nenhuma call ainda. Envie um áudio acima para começar.</div>
     </section>
 
@@ -173,7 +184,7 @@ const SUPABASE_URL = "https://lhncmqqnyxqkxfhiafaz.supabase.co";
 const SUPABASE_KEY = "sb_publishable_9zXFMPKbxrrDM8t5ecjY5Q_p4wCipFB";
 const FUNC = "quick-responder";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-let USER=null, CALLS=[], PERFIS={}, CUR=null, FILE=null;
+let USER=null, CALLS=[], PERFIS={}, CUR=null, FILE=null, PERIODO='tudo';
 
 function esc(s){return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 function lista(arr){ if(!arr||!arr.length) return '<p style="color:var(--muted)">—</p>';
@@ -274,23 +285,54 @@ async function carregar(){
   CALLS=calls||[]; PERFIS={}; (perfis||[]).forEach(p=>PERFIS[p.id]={nome:p.nome,email:p.email});
   render();
 }
+function setPeriodo(p){ PERIODO=p; document.querySelectorAll('.per').forEach(b=>b.classList.toggle('active',b.dataset.p===p)); render(); }
+function dentroPeriodo(c){
+  if(PERIODO==='tudo') return true;
+  const d=new Date(c.data_call), now=new Date();
+  if(PERIODO==='hoje') return d.toDateString()===now.toDateString();
+  const dias=PERIODO==='7d'?7:30;
+  return d>=new Date(now.getTime()-dias*86400000);
+}
+function diaKey(s){ const d=new Date(s); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
+function diaLabel(s){
+  const d=new Date(s), now=new Date(), ontem=new Date(now.getTime()-86400000);
+  if(d.toDateString()===now.toDateString()) return 'Hoje';
+  if(d.toDateString()===ontem.toDateString()) return 'Ontem';
+  return d.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});
+}
+function cardEl(c,i){
+  const cls={positivo:'b-pos',neutro:'b-neu',negativo:'b-neg'}[c.sentimento]||'b-neu';
+  const d=document.createElement('div'); d.className='call'; d.style.animationDelay=(i*.04)+'s'; d.onclick=()=>abrir(c.id);
+  d.innerHTML=`<div class="name">${esc(c.cliente||'Cliente não identificado')}</div>
+    <div class="meta">${new Date(c.data_call).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</div>
+    <div class="badges"><span class="badge ${cls}">${esc(c.sentimento||'—')}</span><span class="badge b-score">Score ${c.score_oportunidade??'—'}</span></div>`;
+  return d;
+}
 function render(){
-  document.getElementById('empty').classList.toggle('hidden',CALLS.length>0);
-  const pos=CALLS.filter(c=>c.sentimento==='positivo').length;
-  const avg=CALLS.length?Math.round(CALLS.reduce((s,c)=>s+(c.score_oportunidade||0),0)/CALLS.length):0;
+  const filt=CALLS.filter(dentroPeriodo);
+  document.getElementById('empty').classList.toggle('hidden',filt.length>0);
+  const pos=filt.filter(c=>c.sentimento==='positivo').length;
+  const avg=filt.length?Math.round(filt.reduce((s,c)=>s+(c.score_oportunidade||0),0)/filt.length):0;
   document.getElementById('stats').innerHTML=`
-    <div class="stat"><div class="n">${CALLS.length}</div><div class="l">Calls analisadas</div></div>
+    <div class="stat"><div class="n">${filt.length}</div><div class="l">Calls no período</div></div>
     <div class="stat"><div class="n" style="color:var(--green)">${pos}</div><div class="l">Sentimento positivo</div></div>
     <div class="stat"><div class="n" style="color:var(--accent)">${avg}</div><div class="l">Score médio</div></div>
-    <div class="stat"><div class="n" style="color:var(--blue)">${new Set(CALLS.map(c=>c.cliente).filter(Boolean)).size}</div><div class="l">Clientes</div></div>`;
-  const g=document.getElementById('grid'); g.innerHTML='';
-  CALLS.forEach((c,i)=>{
-    const cls={positivo:'b-pos',neutro:'b-neu',negativo:'b-neg'}[c.sentimento]||'b-neu';
-    const d=document.createElement('div'); d.className='call'; d.style.animationDelay=(i*.04)+'s'; d.onclick=()=>abrir(c.id);
-    d.innerHTML=`<div class="name">${esc(c.cliente||'Cliente não identificado')}</div>
-      <div class="meta">${new Date(c.data_call).toLocaleString('pt-BR')}</div>
-      <div class="badges"><span class="badge ${cls}">${esc(c.sentimento||'—')}</span><span class="badge b-score">Score ${c.score_oportunidade??'—'}</span></div>`;
-    g.appendChild(d);
+    <div class="stat"><div class="n" style="color:var(--blue)">${new Set(filt.map(c=>c.cliente).filter(Boolean)).size}</div><div class="l">Clientes</div></div>`;
+  const cont=document.getElementById('dias'); cont.innerHTML='';
+  const map={}, ordem=[];
+  filt.forEach(c=>{ const k=diaKey(c.data_call); if(!map[k]){map[k]={label:diaLabel(c.data_call),calls:[]};ordem.push(k);} map[k].calls.push(c); });
+  ordem.forEach(k=>{
+    const cs=map[k].calls;
+    const a=Math.round(cs.reduce((s,c)=>s+(c.score_oportunidade||0),0)/cs.length);
+    const sc={positivo:0,neutro:0,negativo:0}; cs.forEach(c=>{if(c.sentimento)sc[c.sentimento]=(sc[c.sentimento]||0)+1;});
+    const pred=Object.entries(sc).sort((x,y)=>y[1]-x[1])[0][0];
+    const emoji={positivo:'🟢',neutro:'🟡',negativo:'🔴'}[pred]||'🟡';
+    const h=document.createElement('div'); h.className='diahead';
+    h.innerHTML=`<h3>${map[k].label}</h3><span class="diasub">${cs.length} call(s) · score ${a} · ${emoji} ${pred}</span>`;
+    cont.appendChild(h);
+    const gd=document.createElement('div'); gd.className='grid';
+    cs.forEach((c,i)=>gd.appendChild(cardEl(c,i)));
+    cont.appendChild(gd);
   });
 }
 
