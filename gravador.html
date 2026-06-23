@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gravador de Calls · ERA</title>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style id="css">
+  :root{--bg:#faf9f5;--card:#fff;--txt:#1F2041;--ink:#3A3A57;--muted:#6B6B80;--line:#E6E5EE;
+    --accent:#4B3F72;--green:#417B5A;--red:#C0392B;--shadow:0 10px 30px rgba(31,32,65,.12);}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Inter',system-ui,sans-serif;color:var(--ink);background:radial-gradient(900px 500px at 80% -10%,#F4E6DA,var(--bg) 60%);min-height:100vh}
+  h1,h2{font-family:'Quicksand',sans-serif;margin:0;color:var(--txt)}
+  .wrap{max-width:520px;margin:0 auto;padding:30px 20px}
+  .rec{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:var(--shadow)}
+  .logo{width:46px;height:46px;border-radius:13px;background:linear-gradient(135deg,#4B3F72,#417B5A);display:grid;place-items:center;font-size:22px;color:#fff;margin-bottom:10px}
+  label{font-size:13px;color:var(--muted);display:block;margin:12px 0 6px}
+  input{width:100%;padding:11px 13px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--txt);font-size:15px;font-family:'Inter'}
+  input:focus{outline:none;border-color:var(--accent)}
+  .btn{border:none;border-radius:11px;padding:11px 16px;font-weight:600;cursor:pointer;font-size:14px;font-family:'Inter';display:inline-flex;align-items:center;gap:8px;transition:transform .12s,opacity .2s}
+  .btn:hover{transform:translateY(-2px)} .btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+  .btn-rec{background:var(--red);color:#fff;width:100%;justify-content:center;font-size:16px;padding:14px}
+  .btn-stop{background:var(--txt);color:#fff;width:100%;justify-content:center;font-size:16px;padding:14px}
+  .btn-soft{background:#EDEDF4;color:var(--txt)}
+  .row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+  .timer{font-family:'Quicksand';font-size:40px;font-weight:700;color:var(--txt);text-align:center;margin:10px 0 4px}
+  .dot{display:inline-block;width:11px;height:11px;border-radius:50%;background:var(--red);margin-right:7px;animation:pulse 1s infinite}
+  .status{font-size:13px;color:var(--muted);text-align:center;min-height:18px}
+  .ok{color:var(--green)} .erro{color:var(--red)}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+  .pip-mode .wrap{padding:10px} .pip-mode .logo,.pip-mode .desc,.pip-mode h1{display:none}
+</style>
+</head>
+<body>
+<div class="wrap" id="host">
+  <div class="rec" id="rec">
+    <div class="logo">🎙️</div>
+    <h1 style="font-size:24px">Gravador de Calls</h1>
+    <p class="desc" style="color:var(--muted);font-size:13px;margin:4px 0 6px">Grava você + cliente e salva o MP3 na pasta da ferramenta.</p>
+
+    <label>Cliente</label>
+    <input id="cliente" placeholder="Nome do cliente">
+
+    <div class="timer" id="timer">00:00</div>
+    <div class="status" id="status">Escolha a pasta e comece a gravar.</div>
+
+    <div style="margin-top:12px">
+      <button class="btn btn-rec" id="btnRec" onclick="toggle()">🔴 Gravar</button>
+    </div>
+    <div class="row">
+      <button class="btn btn-soft" id="btnPasta" onclick="escolherPasta()" style="flex:1">📁 Pasta destino</button>
+      <button class="btn btn-soft" id="btnPip" onclick="flutuar()" style="flex:1">📌 Flutuar</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
+<script>
+let dirHandle=null, mediaRec=null, chunks=[], t0=0, tick=null, gravando=false, pipWin=null;
+
+// ---- IndexedDB simples p/ guardar a pasta escolhida ----
+function idb(){return new Promise((res,rej)=>{const r=indexedDB.open('grav',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});}
+async function idbSet(k,v){const d=await idb();return new Promise(r=>{d.transaction('kv','readwrite').objectStore('kv').put(v,k).onsuccess=()=>r();});}
+async function idbGet(k){const d=await idb();return new Promise(r=>{const q=d.transaction('kv').objectStore('kv').get(k);q.onsuccess=()=>r(q.result);q.onerror=()=>r(null);});}
+
+function setStatus(t,cls){const e=()=>{const s=(pipWin?pipWin.document:document).getElementById('status');if(s){s.textContent=t;s.className='status '+(cls||'');}};e();}
+function $(id){return (pipWin?pipWin.document:document).getElementById(id);}
+
+async function restaurarPasta(){
+  try{ const h=await idbGet('dir'); if(h){ const p=await h.queryPermission({mode:'readwrite'}); if(p==='granted'){ dirHandle=h; setStatus('Pasta pronta: '+h.name); } } }catch(e){}
+}
+async function escolherPasta(){
+  try{
+    dirHandle=await window.showDirectoryPicker({mode:'readwrite'});
+    await idbSet('dir',dirHandle);
+    setStatus('Pasta escolhida: '+dirHandle.name,'ok');
+  }catch(e){ setStatus('Seleção de pasta cancelada.','erro'); }
+}
+
+async function garantirPasta(){
+  if(!dirHandle){ await escolherPasta(); return !!dirHandle; }
+  const p=await dirHandle.queryPermission({mode:'readwrite'});
+  if(p!=='granted'){ const r=await dirHandle.requestPermission({mode:'readwrite'}); if(r!=='granted'){ await escolherPasta(); } }
+  return !!dirHandle;
+}
+
+async function toggle(){ gravando?parar():iniciar(); }
+
+async function iniciar(){
+  if(!(await garantirPasta())){ setStatus('Escolha a pasta de destino primeiro.','erro'); return; }
+  try{
+    setStatus('Selecione a aba/janela da call e marque "compartilhar áudio".');
+    const disp=await navigator.mediaDevices.getDisplayMedia({video:true,audio:true});
+    if(!disp.getAudioTracks().length){ setStatus('Você não marcou "compartilhar áudio". Tente de novo.','erro'); disp.getTracks().forEach(t=>t.stop()); return; }
+    const mic=await navigator.mediaDevices.getUserMedia({audio:true});
+    const ac=new AudioContext(); const dest=ac.createMediaStreamDestination();
+    ac.createMediaStreamSource(new MediaStream(disp.getAudioTracks())).connect(dest);
+    ac.createMediaStreamSource(mic).connect(dest);
+    chunks=[]; mediaRec=new MediaRecorder(dest.stream,{mimeType:'audio/webm'});
+    mediaRec.ondataavailable=e=>{ if(e.data.size)chunks.push(e.data); };
+    mediaRec._extra=[disp,mic,ac];
+    mediaRec.onstop=async()=>{ disp.getTracks().forEach(t=>t.stop()); mic.getTracks().forEach(t=>t.stop()); try{ac.close()}catch(_){} await salvar(); };
+    disp.getVideoTracks()[0].addEventListener('ended',()=>{ if(gravando) parar(); }); // se parar o compartilhamento
+    mediaRec.start();
+    gravando=true; t0=Date.now(); tick=setInterval(atualizarTimer,500);
+    $('btnRec').textContent='⏹ Parar'; $('btnRec').className='btn btn-stop';
+    setStatus('<span class="dot"></span> Gravando…');
+    const s=$('status'); if(s) s.innerHTML='<span class="dot"></span> Gravando…';
+  }catch(e){ setStatus('Não consegui iniciar: '+(e.message||e),'erro'); }
+}
+
+function parar(){
+  if(!mediaRec) return;
+  gravando=false; clearInterval(tick);
+  $('btnRec').textContent='🔴 Gravar'; $('btnRec').className='btn btn-rec';
+  setStatus('Salvando…');
+  mediaRec.stop();
+}
+
+function atualizarTimer(){
+  const s=Math.floor((Date.now()-t0)/1000);
+  const mm=String(Math.floor(s/60)).padStart(2,'0'), ss=String(s%60).padStart(2,'0');
+  const el=$('timer'); if(el) el.textContent=mm+':'+ss;
+}
+
+async function toMp3(blob){
+  const buf=await blob.arrayBuffer();
+  const ac=new (window.AudioContext||window.webkitAudioContext)();
+  const decoded=await ac.decodeAudioData(buf);
+  const rate=16000;
+  const off=new OfflineAudioContext(1,Math.ceil(decoded.duration*rate),rate);
+  const src=off.createBufferSource(); src.buffer=decoded; src.connect(off.destination); src.start();
+  const rendered=await off.startRendering();
+  const ch=rendered.getChannelData(0); const int16=new Int16Array(ch.length);
+  for(let i=0;i<ch.length;i++){const v=Math.max(-1,Math.min(1,ch[i]));int16[i]=v<0?v*32768:v*32767;}
+  const enc=new lamejs.Mp3Encoder(1,rate,64); const out=[]; const bs=1152;
+  for(let i=0;i<int16.length;i+=bs){const m=enc.encodeBuffer(int16.subarray(i,i+bs));if(m.length)out.push(m);}
+  const e=enc.flush(); if(e.length)out.push(e);
+  return new Blob(out,{type:'audio/mpeg'});
+}
+
+async function salvar(){
+  try{
+    const webm=new Blob(chunks,{type:'audio/webm'});
+    let blob, ext='mp3';
+    try{ blob=await toMp3(webm); }catch(err){ blob=webm; ext='webm'; } // se mp3 falhar, salva webm (uploader converte)
+    const cli=($('cliente').value||'call').replace(/[^\w.\-]+/g,'_');
+    const d=new Date(); const ts=d.getFullYear()+('0'+(d.getMonth()+1)).slice(-2)+('0'+d.getDate()).slice(-2)+'_'+('0'+d.getHours()).slice(-2)+('0'+d.getMinutes()).slice(-2);
+    const nome=`${cli}_${ts}.${ext}`;
+    const fh=await dirHandle.getFileHandle(nome,{create:true});
+    const w=await fh.createWritable(); await w.write(blob); await w.close();
+    setStatus('Salvo: '+nome+' ✓ (o uploader vai processar)','ok');
+    const el=$('timer'); if(el) el.textContent='00:00';
+    const c=$('cliente'); if(c) c.value='';
+  }catch(e){ setStatus('Erro ao salvar: '+(e.message||e),'erro'); }
+}
+
+// ---- Picture-in-Picture (janela flutuante sempre no topo) ----
+async function flutuar(){
+  if(!('documentPictureInPicture' in window)){ setStatus('Seu navegador não suporta janela flutuante (use Chrome/Edge).','erro'); return; }
+  if(pipWin){ pipWin.close(); return; }
+  pipWin=await documentPictureInPicture.requestWindow({width:300,height:230});
+  pipWin.document.head.appendChild(document.getElementById('css').cloneNode(true));
+  pipWin.document.body.classList.add('pip-mode');
+  const box=document.getElementById('rec');
+  pipWin.document.body.appendChild(box);
+  pipWin.addEventListener('pagehide',()=>{ document.getElementById('host').appendChild(box); pipWin=null; });
+}
+
+restaurarPasta();
+</script>
+</body>
+</html>
