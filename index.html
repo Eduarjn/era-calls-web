@@ -62,6 +62,13 @@
   .per.active{background:var(--navy);color:#fff;border-color:transparent}
   .diahead{display:flex;align-items:baseline;gap:12px;margin:22px 0 12px;flex-wrap:wrap}
   .diahead h3{font-size:18px;font-family:'Quicksand'} .diasub{color:var(--muted);font-size:13px}
+  .chips{display:flex;gap:8px;flex-wrap:wrap}
+  .chip{padding:6px 13px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--muted);cursor:pointer;font-size:13px;font-weight:600;user-select:none;transition:.15s}
+  .chip.on{background:var(--accent);color:#fff;border-color:transparent}
+  .tbl{width:100%;border-collapse:collapse;font-size:13px}
+  .tbl th,.tbl td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line)}
+  .tbl th{color:var(--muted);font-weight:600}
+  .tbl tr:hover{background:#FBFBFD}
 
   .panel{border-radius:16px;padding:20px;margin-bottom:16px;animation:rise .4s both}
   .panel h3{font-size:18px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
@@ -127,6 +134,7 @@
       <button class="vtab active" id="nav-calls" onclick="view('calls')">📞 Calls</button>
       <button class="vtab" id="nav-mkt" onclick="view('mkt')">📣 Marketing</button>
       <button class="vtab" id="nav-vend" onclick="view('vend')">👥 Vendedores</button>
+      <button class="vtab" id="nav-rel" onclick="view('rel')">📈 Relatórios</button>
     </div>
 
     <section id="view-calls">
@@ -163,6 +171,15 @@
       <h2 style="font-size:22px;margin-bottom:18px">Panorama por vendedor</h2>
       <div class="grid" id="vendContent"></div>
     </section>
+
+    <section id="view-rel" class="hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+        <h2 style="font-size:22px">Relatórios · Rastreabilidade</h2>
+        <button class="btn btn-soft" onclick="exportarCSV()">⬇ Exportar CSV</button>
+      </div>
+      <div id="relCharts"></div>
+      <div id="relTable"></div>
+    </section>
   </main>
 </div>
 
@@ -186,6 +203,7 @@ const SUPABASE_KEY = "sb_publishable_9zXFMPKbxrrDM8t5ecjY5Q_p4wCipFB";
 const FUNC = "quick-responder";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let USER=null, CALLS=[], PERFIS={}, CUR=null, FILE=null, PERIODO='tudo';
+const PARTICIPANTES=['Nicole','Gustavo','Tip','Parceiro'];  // edite aqui para adicionar/trocar pessoas
 
 function esc(s){return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 function lista(arr){ if(!arr||!arr.length) return '<p style="color:var(--muted)">—</p>';
@@ -227,6 +245,7 @@ function view(v){
   });
   if(v==='mkt') renderMkt();
   if(v==='vend') renderVend();
+  if(v==='rel') renderRelatorios();
 }
 
 const drop=document.getElementById('drop'), fileInput=document.getElementById('file');
@@ -385,12 +404,46 @@ function renderVend(){
   });
 }
 
+async function toggleP(id,nome){
+  const c=CALLS.find(x=>x.id===id); if(!c) return;
+  let arr=Array.isArray(c.participantes)?c.participantes.slice():[];
+  arr = arr.includes(nome) ? arr.filter(x=>x!==nome) : [...arr,nome];
+  const {error}=await sb.from('calls').update({participantes:arr}).eq('id',id);
+  if(error){ alert('Erro ao salvar participante: '+error.message); return; }
+  c.participantes=arr; abrir(id);
+}
+function renderRelatorios(){
+  const m={};
+  CALLS.forEach(c=>(Array.isArray(c.participantes)?c.participantes:[]).forEach(p=>{ if(!m[p])m[p]={n:0,s:0}; m[p].n++; m[p].s+=(c.score_oportunidade||0); }));
+  const arr=Object.entries(m).map(([p,v])=>({p,n:v.n,avg:Math.round(v.s/v.n)})).sort((a,b)=>b.n-a.n);
+  const max=arr.length?arr[0].n:1;
+  const semTag=CALLS.filter(c=>!(Array.isArray(c.participantes)&&c.participantes.length)).length;
+  let ch=`<div class="panel"><h3>📞 Calls por pessoa</h3>`;
+  ch+= arr.length ? arr.map(x=>`<div class="bar-row"><div class="lbl"><span>${esc(x.p)}</span><b>${x.n} call(s) · score ${x.avg}</b></div><div class="bar"><span style="width:${Math.round(x.n/max*100)}%"></span></div></div>`).join('')
+                  : '<p style="color:var(--muted)">Marque os participantes nas calls (abra uma call → "Quem participou") para ver os gráficos.</p>';
+  if(semTag) ch+=`<p style="color:var(--muted);font-size:13px;margin-top:10px">${semTag} call(s) ainda sem participante marcado.</p>`;
+  ch+='</div>';
+  document.getElementById('relCharts').innerHTML=ch;
+  const rows=CALLS.map(c=>`<tr><td>${new Date(c.data_call).toLocaleString('pt-BR')}</td><td>${esc(c.cliente||'—')}</td><td>${esc((Array.isArray(c.participantes)?c.participantes:[]).join(', ')||'—')}</td><td>${esc(c.sentimento||'—')}</td><td style="text-align:center">${c.score_oportunidade??'—'}</td></tr>`).join('');
+  document.getElementById('relTable').innerHTML=`<div class="panel"><h3>🧾 Rastreabilidade (todas as calls)</h3>
+    <div style="overflow:auto"><table class="tbl"><thead><tr><th>Data</th><th>Cliente</th><th>Participantes</th><th>Sentimento</th><th>Score</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+}
+function exportarCSV(){
+  const head=['Data','Cliente','Participantes','Sentimento','Score'];
+  const linhas=CALLS.map(c=>[new Date(c.data_call).toLocaleString('pt-BR'), c.cliente||'', (Array.isArray(c.participantes)?c.participantes:[]).join('; '), c.sentimento||'', c.score_oportunidade??'']);
+  const csv=[head,...linhas].map(r=>r.map(x=>'"'+(''+x).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='relatorio_calls.csv'; a.click(); URL.revokeObjectURL(a.href);
+}
 function abrir(id){
   const c=CALLS.find(x=>x.id===id); if(!c)return; CUR=c;
   document.getElementById('detTitle').textContent=c.cliente||'Cliente não identificado';
   document.getElementById('detSub').textContent=new Date(c.data_call).toLocaleString('pt-BR');
   const a=c.analise||{};
+  const part=Array.isArray(c.participantes)?c.participantes:[];
   document.getElementById('paneA').innerHTML=`
+    <div class="rcard"><h3>👥 Quem participou</h3>
+      <div class="chips">${PARTICIPANTES.map(p=>`<span class="chip ${part.includes(p)?'on':''}" onclick="toggleP('${c.id}','${p}')">${esc(p)}</span>`).join('')}</div></div>
     <div class="rcard"><h3>📌 Resumo</h3><p>${esc(c.resumo||a.resumo||'—')}</p></div>
     <div class="rcard"><h3>🩺 Dores do cliente</h3>${lista(a.dores)}</div>
     <div class="rcard"><h3>🎯 O que o cliente precisa</h3>${lista(a.necessidades)}</div>
