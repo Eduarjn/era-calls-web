@@ -69,6 +69,11 @@
   .tbl th,.tbl td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line)}
   .tbl th{color:var(--muted);font-weight:600}
   .tbl tr:hover{background:#FBFBFD}
+  .filtros{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+  .filtros input{width:auto} .filtros #relBusca{flex:1;min-width:220px}
+  .filtros label{margin:0;display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
+  .legenda{display:flex;align-items:center;gap:7px;font-size:13px;margin:3px 0}
+  .legenda .sw{width:12px;height:12px;border-radius:3px;display:inline-block}
 
   .panel{border-radius:16px;padding:20px;margin-bottom:16px;animation:rise .4s both}
   .panel h3{font-size:18px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
@@ -176,6 +181,12 @@
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px">
         <h2 style="font-size:22px">Relatórios · Rastreabilidade</h2>
         <button class="btn btn-soft" onclick="exportarCSV()">⬇ Exportar CSV</button>
+      </div>
+      <div class="filtros">
+        <input id="relBusca" placeholder="🔎 Buscar por cliente ou participante" oninput="renderRelatorios()">
+        <label>De <input type="date" id="relDe" onchange="renderRelatorios()"></label>
+        <label>Até <input type="date" id="relAte" onchange="renderRelatorios()"></label>
+        <button class="btn btn-soft" onclick="limparFiltroRel()">Limpar</button>
       </div>
       <div id="relCharts"></div>
       <div id="relTable"></div>
@@ -412,25 +423,56 @@ async function toggleP(id,nome){
   if(error){ alert('Erro ao salvar participante: '+error.message); return; }
   c.participantes=arr; abrir(id);
 }
+function relFiltradas(){
+  const q=(document.getElementById('relBusca')?.value||'').toLowerCase().trim();
+  const de=document.getElementById('relDe')?.value, ate=document.getElementById('relAte')?.value;
+  return CALLS.filter(c=>{
+    const d=new Date(c.data_call);
+    if(de && d < new Date(de+'T00:00:00')) return false;
+    if(ate && d > new Date(ate+'T23:59:59')) return false;
+    if(q){ const hay=((c.cliente||'')+' '+((Array.isArray(c.participantes)?c.participantes:[]).join(' '))).toLowerCase(); if(!hay.includes(q)) return false; }
+    return true;
+  });
+}
+function pieSVG(data){
+  data=data.filter(d=>d.value>0); const total=data.reduce((s,d)=>s+d.value,0);
+  if(!total) return '<p style="color:var(--muted)">Sem dados.</p>';
+  let a=-Math.PI/2, paths=''; const R=62,cx=72,cy=72;
+  data.forEach(d=>{ const f=d.value/total, a2=a+f*2*Math.PI, big=f>0.5?1:0;
+    if(f>0.999){ paths+=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="${d.color}"/>`; }
+    else { const x1=cx+R*Math.cos(a),y1=cy+R*Math.sin(a),x2=cx+R*Math.cos(a2),y2=cy+R*Math.sin(a2);
+      paths+=`<path d="M${cx},${cy} L${x1.toFixed(1)},${y1.toFixed(1)} A${R},${R} 0 ${big} 1 ${x2.toFixed(1)},${y2.toFixed(1)} Z" fill="${d.color}"/>`; }
+    a=a2; });
+  const leg=data.map(d=>`<div class="legenda"><span class="sw" style="background:${d.color}"></span>${esc(d.label)}<b style="color:var(--muted);margin-left:auto">${d.value} (${Math.round(d.value/total*100)}%)</b></div>`).join('');
+  return `<div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap"><svg width="144" height="144" viewBox="0 0 144 144">${paths}</svg><div style="flex:1;min-width:150px">${leg}</div></div>`;
+}
 function renderRelatorios(){
-  const m={};
-  CALLS.forEach(c=>(Array.isArray(c.participantes)?c.participantes:[]).forEach(p=>{ if(!m[p])m[p]={n:0,s:0}; m[p].n++; m[p].s+=(c.score_oportunidade||0); }));
-  const arr=Object.entries(m).map(([p,v])=>({p,n:v.n,avg:Math.round(v.s/v.n)})).sort((a,b)=>b.n-a.n);
-  const max=arr.length?arr[0].n:1;
-  const semTag=CALLS.filter(c=>!(Array.isArray(c.participantes)&&c.participantes.length)).length;
-  let ch=`<div class="panel"><h3>📞 Calls por pessoa</h3>`;
-  ch+= arr.length ? arr.map(x=>`<div class="bar-row"><div class="lbl"><span>${esc(x.p)}</span><b>${x.n} call(s) · score ${x.avg}</b></div><div class="bar"><span style="width:${Math.round(x.n/max*100)}%"></span></div></div>`).join('')
-                  : '<p style="color:var(--muted)">Marque os participantes nas calls (abra uma call → "Quem participou") para ver os gráficos.</p>';
-  if(semTag) ch+=`<p style="color:var(--muted);font-size:13px;margin-top:10px">${semTag} call(s) ainda sem participante marcado.</p>`;
-  ch+='</div>';
-  document.getElementById('relCharts').innerHTML=ch;
-  const rows=CALLS.map(c=>`<tr><td>${new Date(c.data_call).toLocaleString('pt-BR')}</td><td>${esc(c.cliente||'—')}</td><td>${esc((Array.isArray(c.participantes)?c.participantes:[]).join(', ')||'—')}</td><td>${esc(c.sentimento||'—')}</td><td style="text-align:center">${c.score_oportunidade??'—'}</td></tr>`).join('');
-  document.getElementById('relTable').innerHTML=`<div class="panel"><h3>🧾 Rastreabilidade (todas as calls)</h3>
+  const F=relFiltradas();
+  const sent={positivo:0,neutro:0,negativo:0}; F.forEach(c=>{ if(c.sentimento&&sent[c.sentimento]!=null)sent[c.sentimento]++; });
+  const pieSent=pieSVG([{label:'Positivo',value:sent.positivo,color:'#417B5A'},{label:'Neutro',value:sent.neutro,color:'#7A5840'},{label:'Negativo',value:sent.negativo,color:'#C0392B'}]);
+  const pal=['#4B3F72','#417B5A','#45466B','#7A5840','#22d3ee','#C0392B','#b6a4ff','#E9A23B'];
+  const m={}; F.forEach(c=>(Array.isArray(c.participantes)?c.participantes:[]).forEach(p=>m[p]=(m[p]||0)+1));
+  const partArr=Object.entries(m).sort((a,b)=>b[1]-a[1]);
+  const piePart=pieSVG(partArr.map(([p,n],i)=>({label:p,value:n,color:pal[i%pal.length]})));
+  const sc={}; F.forEach(c=>(Array.isArray(c.participantes)?c.participantes:[]).forEach(p=>{if(!sc[p])sc[p]={n:0,s:0};sc[p].n++;sc[p].s+=(c.score_oportunidade||0);}));
+  const barArr=Object.entries(sc).map(([p,v])=>({p,n:v.n,avg:Math.round(v.s/v.n)})).sort((a,b)=>b.n-a.n);
+  const max=barArr.length?barArr[0].n:1;
+  const bars= barArr.length? barArr.map(x=>`<div class="bar-row"><div class="lbl"><span>${esc(x.p)}</span><b>${x.n} call(s) · score ${x.avg}</b></div><div class="bar"><span style="width:${Math.round(x.n/max*100)}%"></span></div></div>`).join('') : '<p style="color:var(--muted)">Marque participantes nas calls para ver.</p>';
+  document.getElementById('relCharts').innerHTML=`
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:16px">
+      <div class="panel"><h3>😊 Sentimento das calls</h3>${pieSent}</div>
+      <div class="panel"><h3>🥧 Participação por pessoa</h3>${piePart}</div>
+    </div>
+    <div class="panel"><h3>📊 Calls e score por pessoa</h3>${bars}</div>`;
+  const rows=F.map(c=>`<tr><td>${new Date(c.data_call).toLocaleString('pt-BR')}</td><td>${esc(c.cliente||'—')}</td><td>${esc((Array.isArray(c.participantes)?c.participantes:[]).join(', ')||'—')}</td><td>${esc(c.sentimento||'—')}</td><td style="text-align:center">${c.score_oportunidade??'—'}</td></tr>`).join('');
+  document.getElementById('relTable').innerHTML=`<div class="panel"><h3>🧾 Rastreabilidade (${F.length} call${F.length===1?'':'s'})</h3>
     <div style="overflow:auto"><table class="tbl"><thead><tr><th>Data</th><th>Cliente</th><th>Participantes</th><th>Sentimento</th><th>Score</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
 }
+function limparFiltroRel(){ ['relBusca','relDe','relAte'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';}); renderRelatorios(); }
 function exportarCSV(){
+  const F=relFiltradas();
   const head=['Data','Cliente','Participantes','Sentimento','Score'];
-  const linhas=CALLS.map(c=>[new Date(c.data_call).toLocaleString('pt-BR'), c.cliente||'', (Array.isArray(c.participantes)?c.participantes:[]).join('; '), c.sentimento||'', c.score_oportunidade??'']);
+  const linhas=F.map(c=>[new Date(c.data_call).toLocaleString('pt-BR'), c.cliente||'', (Array.isArray(c.participantes)?c.participantes:[]).join('; '), c.sentimento||'', c.score_oportunidade??'']);
   const csv=[head,...linhas].map(r=>r.map(x=>'"'+(''+x).replace(/"/g,'""')+'"').join(',')).join('\n');
   const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='relatorio_calls.csv'; a.click(); URL.revokeObjectURL(a.href);
