@@ -53,6 +53,9 @@
   .call{border-radius:16px;padding:18px;cursor:pointer;transition:.15s;animation:rise .4s both}
   .call:hover{border-color:#C9C7DE;transform:translateY(-3px)}
   .call .name{font-weight:700;font-size:16px;color:var(--navy);font-family:'Quicksand'} .call .meta{color:var(--muted);font-size:12px;margin-top:3px}
+  .cardacts{display:flex;gap:6px;justify-content:flex-end;margin-top:10px}
+  .cardacts button{background:#F1F0F7;border:1px solid var(--line);border-radius:8px;cursor:pointer;font-size:13px;padding:4px 10px;color:var(--muted)}
+  .cardacts button:hover{color:var(--navy);background:#E8E6F2}
   .badges{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
   .badge{font-size:11px;font-weight:700;padding:5px 10px;border-radius:999px}
   .b-pos{background:rgba(65,123,90,.14);color:#2A6045} .b-neu{background:rgba(122,88,64,.14);color:#7A5840} .b-neg{background:rgba(192,57,43,.12);color:#C0392B}
@@ -339,7 +342,11 @@ function cardEl(c,i){
   const d=document.createElement('div'); d.className='call'; d.style.animationDelay=(i*.04)+'s'; d.onclick=()=>abrir(c.id);
   d.innerHTML=`<div class="name">${esc(c.cliente||'Cliente não identificado')}</div>
     <div class="meta">${new Date(c.data_call).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</div>
-    <div class="badges"><span class="badge ${cls}">${esc(c.sentimento||'—')}</span><span class="badge b-score">Score ${c.score_oportunidade??'—'}</span></div>`;
+    <div class="badges"><span class="badge ${cls}">${esc(c.sentimento||'—')}</span><span class="badge b-score">Score ${c.score_oportunidade??'—'}</span></div>
+    <div class="cardacts" onclick="event.stopPropagation()">
+      <button onclick="renomearId('${c.id}')" title="Renomear">✏️ Renomear</button>
+      <button onclick="excluirCall('${c.id}')" title="Excluir">🗑️</button>
+    </div>`;
   return d;
 }
 function render(){
@@ -426,17 +433,26 @@ async function toggleP(id,nome){
   if(error){ alert('Erro ao salvar participante: '+error.message); return; }
   c.participantes=arr; abrir(id);
 }
-async function renomear(){
-  if(!CUR) return;
-  const novo=prompt('Novo nome da call (cliente):', CUR.cliente||'');
+async function renomearId(id){
+  const c=CALLS.find(x=>x.id===id); if(!c) return;
+  const novo=prompt('Novo nome da call (cliente):', c.cliente||'');
   if(novo===null) return;
   const nome=novo.trim()||null;
-  const {error}=await sb.from('calls').update({cliente:nome}).eq('id',CUR.id);
+  const {error}=await sb.from('calls').update({cliente:nome}).eq('id',id);
   if(error){ alert('Erro ao renomear: '+error.message); return; }
-  CUR.cliente=nome;
-  const c=CALLS.find(x=>x.id===CUR.id); if(c) c.cliente=nome;
-  document.getElementById('detTitle').textContent=nome||'Cliente não identificado';
+  c.cliente=nome;
+  if(CUR&&CUR.id===id){ CUR.cliente=nome; const t=document.getElementById('detTitle'); if(t)t.textContent=nome||'Cliente não identificado'; }
   render();
+}
+function renomear(){ if(CUR) renomearId(CUR.id); }
+async function excluirCall(id){
+  const c=CALLS.find(x=>x.id===id);
+  if(!confirm('Excluir esta call?\n\n'+((c&&c.cliente)||'')+'\n\nEssa ação não pode ser desfeita.')) return;
+  if(c&&c.audio_path){ try{ await sb.storage.from('audios').remove([c.audio_path]); }catch(e){} }
+  const {error}=await sb.from('calls').delete().eq('id',id);
+  if(error){ alert('Erro ao excluir: '+error.message); return; }
+  CALLS=CALLS.filter(x=>x.id!==id);
+  fechar('ovDet'); render();
 }
 function relFiltradas(){
   const q=(document.getElementById('relBusca')?.value||'').toLowerCase().trim();
