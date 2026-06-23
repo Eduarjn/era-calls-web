@@ -25,22 +25,22 @@
   input:focus{outline:none;border-color:var(--accent)}
   label{font-size:13px;color:var(--muted);display:block;margin:14px 0 6px}
 
-  /* LOGIN */
   #login{min-height:100vh;display:grid;place-items:center;padding:20px}
   .loginbox{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:34px 30px;width:360px;box-shadow:var(--shadow);animation:pop .3s}
   .logo{width:50px;height:50px;border-radius:14px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:grid;place-items:center;font-size:26px;margin-bottom:14px}
   .err{background:rgba(248,113,113,.12);color:var(--red);border-radius:8px;padding:10px;font-size:13px;margin-top:12px;text-align:center}
 
-  /* APP */
   header{display:flex;align-items:center;gap:14px;padding:18px 26px;border-bottom:1px solid var(--line);background:rgba(20,25,33,.6);backdrop-filter:blur(8px);position:sticky;top:0;z-index:5}
   header h1{font-size:22px} header .sub{color:var(--muted);font-size:12px}
   .spacer{flex:1}
   main{padding:24px 26px;max-width:1180px;margin:0 auto}
+  .viewnav{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+  .vtab{padding:9px 16px;border-radius:10px;background:var(--card);color:var(--muted);border:1px solid var(--line);cursor:pointer;font-weight:600;font-size:14px}
+  .vtab.active{background:var(--accent);color:#fff;border-color:transparent}
+
   .upload{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:24px;animation:rise .4s both}
   .drop{border:2px dashed var(--line);border-radius:14px;padding:26px;text-align:center;color:var(--muted);cursor:pointer;transition:.2s;margin-top:8px}
   .drop:hover,.drop.over{border-color:var(--accent);background:rgba(124,92,255,.06);color:var(--txt)}
-  .row{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end}
-  .row>div{flex:1;min-width:200px}
 
   .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
   .stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px 18px}
@@ -54,6 +54,14 @@
   .badge{font-size:11px;font-weight:700;padding:5px 10px;border-radius:999px}
   .b-pos{background:rgba(52,211,153,.15);color:var(--green)} .b-neu{background:rgba(245,166,35,.15);color:var(--amber)} .b-neg{background:rgba(248,113,113,.15);color:var(--red)}
   .b-score{background:rgba(124,92,255,.15);color:#b6a4ff}
+
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:16px;animation:rise .4s both}
+  .panel h3{font-size:18px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+  .bar-row{margin:9px 0}
+  .bar-row .lbl{display:flex;justify-content:space-between;gap:10px;font-size:14px;margin-bottom:5px}
+  .bar-row .lbl b{color:var(--muted);font-weight:600}
+  .bar{height:8px;border-radius:6px;background:var(--card2);overflow:hidden}
+  .bar>span{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .5s}
 
   .overlay{position:fixed;inset:0;background:rgba(5,8,12,.66);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:50;padding:20px}
   .overlay.show{display:flex;animation:fade .2s}
@@ -105,28 +113,46 @@
     <button class="btn btn-soft" onclick="sair()">Sair</button>
   </header>
   <main>
-    <div class="upload">
-      <h2 style="font-size:18px;margin-bottom:6px">Nova call</h2>
-      <div class="row">
-        <div><label>Cliente (opcional)</label><input id="cliente" placeholder="Nome do cliente"></div>
-      </div>
-      <div class="drop" id="drop">📂 Arraste o mp3 aqui ou clique para escolher
-        <div id="fileName" style="margin-top:8px;color:var(--accent);font-weight:600"></div>
-      </div>
-      <input id="file" type="file" accept="audio/*,video/*" class="hidden">
-      <button class="btn btn-primary" id="btnEnviar" style="margin-top:14px" onclick="enviar()" disabled>⚡ Enviar e analisar</button>
+    <div class="viewnav">
+      <button class="vtab active" id="nav-calls" onclick="view('calls')">📞 Calls</button>
+      <button class="vtab" id="nav-mkt" onclick="view('mkt')">📣 Marketing</button>
+      <button class="vtab" id="nav-vend" onclick="view('vend')">👥 Vendedores</button>
     </div>
 
-    <div class="stats" id="stats"></div>
-    <h2 style="font-size:20px;margin-bottom:14px">Calls analisadas</h2>
-    <div class="grid" id="grid"></div>
-    <div class="empty hidden" id="empty">Nenhuma call ainda. Envie um mp3 acima para começar.</div>
+    <!-- VIEW CALLS -->
+    <section id="view-calls">
+      <div class="upload">
+        <h2 style="font-size:18px;margin-bottom:6px">Nova call</h2>
+        <label>Cliente (opcional)</label><input id="cliente" placeholder="Nome do cliente">
+        <div class="drop" id="drop">📂 Arraste o áudio aqui ou clique para escolher
+          <div id="fileName" style="margin-top:8px;color:var(--accent);font-weight:600"></div>
+        </div>
+        <input id="file" type="file" accept="audio/*,video/*" class="hidden">
+        <button class="btn btn-primary" id="btnEnviar" style="margin-top:14px" onclick="enviar()" disabled>⚡ Enviar e analisar</button>
+      </div>
+      <div class="stats" id="stats"></div>
+      <h2 style="font-size:20px;margin-bottom:14px">Calls analisadas</h2>
+      <div class="grid" id="grid"></div>
+      <div class="empty hidden" id="empty">Nenhuma call ainda. Envie um áudio acima para começar.</div>
+    </section>
+
+    <!-- VIEW MARKETING -->
+    <section id="view-mkt" class="hidden">
+      <h2 style="font-size:22px;margin-bottom:6px">Inteligência de Marketing</h2>
+      <p style="color:var(--muted);font-size:13px;margin-bottom:18px">O que mais aparece nas calls — use como tema para anúncios e conteúdo.</p>
+      <div id="mktContent"></div>
+    </section>
+
+    <!-- VIEW VENDEDORES -->
+    <section id="view-vend" class="hidden">
+      <h2 style="font-size:22px;margin-bottom:18px">Panorama por vendedor</h2>
+      <div class="grid" id="vendContent"></div>
+    </section>
   </main>
 </div>
 
-<!-- PROGRESS -->
+<!-- PROGRESS / DETALHE -->
 <div class="overlay" id="ovProg"><div class="modal" style="width:min(420px,94vw)"><div class="progress" id="progBody"></div></div></div>
-<!-- DETALHE -->
 <div class="overlay" id="ovDet"><div class="modal">
   <div class="head">
     <div><h2 id="detTitle" style="font-size:22px"></h2><div class="sub" id="detSub" style="color:var(--muted);font-size:13px"></div></div>
@@ -139,21 +165,19 @@
 </div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
 <script>
 const SUPABASE_URL = "https://lhncmqqnyxqkxfhiafaz.supabase.co";
 const SUPABASE_KEY = "sb_publishable_9zXFMPKbxrrDM8t5ecjY5Q_p4wCipFB";
 const FUNC = "quick-responder";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-let USER=null, CALLS=[], CUR=null, FILE=null;
+let USER=null, CALLS=[], PERFIS={}, CUR=null, FILE=null;
 
 function esc(s){return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 function lista(arr){ if(!arr||!arr.length) return '<p style="color:var(--muted)">—</p>';
   return '<ul>'+arr.map(x=>'<li>'+esc(typeof x==='string'?x:JSON.stringify(x))+'</li>').join('')+'</ul>'; }
 
-async function init(){
-  const {data:{session}} = await sb.auth.getSession();
-  if(session){ mostrarApp(session.user); }
-}
+async function init(){ const {data:{session}}=await sb.auth.getSession(); if(session) mostrarApp(session.user); }
 async function entrar(e){
   e.preventDefault();
   const email=document.getElementById('email').value, senha=document.getElementById('senha').value;
@@ -171,7 +195,16 @@ function mostrarApp(user){
 }
 async function sair(){ await sb.auth.signOut(); location.reload(); }
 
-// ---- upload ----
+function view(v){
+  ['calls','mkt','vend'].forEach(x=>{
+    document.getElementById('view-'+x).classList.toggle('hidden',x!==v);
+    document.getElementById('nav-'+x).classList.toggle('active',x===v);
+  });
+  if(v==='mkt') renderMkt();
+  if(v==='vend') renderVend();
+}
+
+// ---- upload + COMPRESSÃO de áudio no navegador (resolve limite de 25MB) ----
 const drop=document.getElementById('drop'), fileInput=document.getElementById('file');
 drop.onclick=()=>fileInput.click();
 fileInput.onchange=()=>setFile(fileInput.files[0]);
@@ -180,32 +213,63 @@ drop.ondragleave=()=>drop.classList.remove('over');
 drop.ondrop=e=>{e.preventDefault();drop.classList.remove('over');setFile(e.dataTransfer.files[0])};
 function setFile(f){ FILE=f; document.getElementById('fileName').textContent=f?f.name:''; document.getElementById('btnEnviar').disabled=!f; }
 
+async function comprimir(file){
+  // decodifica, converte p/ mono 16kHz e recodifica em mp3 64kbps (bem menor)
+  const buf = await file.arrayBuffer();
+  const ac = new (window.AudioContext||window.webkitAudioContext)();
+  const decoded = await ac.decodeAudioData(buf);
+  const rate = 16000;
+  const off = new OfflineAudioContext(1, Math.ceil(decoded.duration*rate), rate);
+  const src = off.createBufferSource(); src.buffer = decoded; src.connect(off.destination); src.start();
+  const rendered = await off.startRendering();
+  const ch = rendered.getChannelData(0);
+  const int16 = new Int16Array(ch.length);
+  for(let i=0;i<ch.length;i++){ const s=Math.max(-1,Math.min(1,ch[i])); int16[i]=s<0?s*32768:s*32767; }
+  const enc = new lamejs.Mp3Encoder(1, rate, 64);
+  const out=[]; const block=1152;
+  for(let i=0;i<int16.length;i+=block){ const mp3=enc.encodeBuffer(int16.subarray(i,i+block)); if(mp3.length)out.push(mp3); }
+  const end=enc.flush(); if(end.length)out.push(end);
+  return new Blob(out,{type:'audio/mpeg'});
+}
+
 async function enviar(){
   if(!FILE) return;
   const cliente=document.getElementById('cliente').value||null;
-  showProg('<div class="spinner"></div><h2>Enviando áudio…</h2><p style="color:var(--muted)">Subindo o arquivo para a nuvem.</p>');
+  let blob=FILE;
   try{
-    const safe=FILE.name.replace(/[^\w.\-]+/g,'_');
-    const path=`${USER.id}/${Date.now()}_${safe}`;
-    const up=await sb.storage.from('audios').upload(path,FILE,{contentType:FILE.type||'audio/mpeg'});
+    showProg('<div class="spinner"></div><h2>Preparando áudio…</h2><p style="color:var(--muted)">Comprimindo para enviar mais rápido.</p>');
+    blob=await comprimir(FILE);
+  }catch(e){ blob=FILE; } // se não der p/ comprimir, envia original
+  if(blob.size>25*1024*1024){
+    showProg('<div class="checkmark" style="background:rgba(248,113,113,.15);color:var(--red)">!</div><h2>Áudio muito grande</h2><p style="color:var(--muted)">Mesmo comprimido passou de 25MB. Tente uma call mais curta.</p><div style="margin-top:18px"><button class="btn btn-ghost" onclick="fechar(\'ovProg\')">Fechar</button></div>');
+    return;
+  }
+  try{
+    showProg('<div class="spinner"></div><h2>Enviando áudio…</h2><p style="color:var(--muted)">Subindo para a nuvem.</p>');
+    const base=(FILE.name||'call').replace(/\.[^.]+$/,'').replace(/[^\w.\-]+/g,'_');
+    const path=`${USER.id}/${Date.now()}_${base}.mp3`;
+    const up=await sb.storage.from('audios').upload(path,blob,{contentType:'audio/mpeg'});
     if(up.error) throw up.error;
-    showProg('<div class="spinner"></div><h2>Transcrevendo e analisando…</h2><p style="color:var(--muted)">Groq transcreve e a IA monta a análise. Pode levar alguns segundos.</p>');
+    showProg('<div class="spinner"></div><h2>Transcrevendo e analisando…</h2><p style="color:var(--muted)">Groq transcreve e a IA monta a análise.</p>');
     const {data,error}=await sb.functions.invoke(FUNC,{body:{audio_path:path,cliente}});
-    if(error){ let msg=error.message; try{const c=await error.context.json();msg=c.error||msg}catch(_){ } throw new Error(msg); }
+    if(error){ let m=error.message; try{const c=await error.context.json();m=c.error||m}catch(_){ } throw new Error(m); }
     if(data&&data.error) throw new Error(data.error);
-    showProg('<div class="checkmark">✓</div><h2>Pronto!</h2><p style="color:var(--muted)">Análise gerada.</p><div style="margin-top:18px"><button class="btn btn-primary" onclick="fechar(\'ovProg\');limparUpload()">Ver na lista</button></div>');
+    showProg('<div class="checkmark">✓</div><h2>Pronto!</h2><p style="color:var(--muted)">Análise gerada.</p><div style="margin-top:18px"><button class="btn btn-primary" onclick="fechar(\'ovProg\');limpar()">Ver na lista</button></div>');
     carregar();
   }catch(err){
     showProg('<div class="checkmark" style="background:rgba(248,113,113,.15);color:var(--red)">!</div><h2>Ops…</h2><p style="color:var(--muted)">'+esc(err.message||err)+'</p><div style="margin-top:18px"><button class="btn btn-ghost" onclick="fechar(\'ovProg\')">Fechar</button></div>');
   }
 }
-function limparUpload(){ FILE=null;fileInput.value='';document.getElementById('fileName').textContent='';document.getElementById('cliente').value='';document.getElementById('btnEnviar').disabled=true; }
+function limpar(){ FILE=null;fileInput.value='';document.getElementById('fileName').textContent='';document.getElementById('cliente').value='';document.getElementById('btnEnviar').disabled=true; }
 
-// ---- lista ----
+// ---- dados ----
 async function carregar(){
-  const {data,error}=await sb.from('calls').select('*').order('data_call',{ascending:false});
-  if(error){ console.error(error); return; }
-  CALLS=data||[]; render();
+  const [{data:calls},{data:perfis}] = await Promise.all([
+    sb.from('calls').select('*').order('data_call',{ascending:false}),
+    sb.from('perfis').select('id,nome,email')
+  ]);
+  CALLS=calls||[]; PERFIS={}; (perfis||[]).forEach(p=>PERFIS[p.id]={nome:p.nome,email:p.email});
+  render();
 }
 function render(){
   document.getElementById('empty').classList.toggle('hidden',CALLS.length>0);
@@ -218,20 +282,56 @@ function render(){
     <div class="stat"><div class="n" style="color:var(--blue)">${new Set(CALLS.map(c=>c.cliente).filter(Boolean)).size}</div><div class="l">Clientes</div></div>`;
   const g=document.getElementById('grid'); g.innerHTML='';
   CALLS.forEach((c,i)=>{
-    const sb_={positivo:'b-pos',neutro:'b-neu',negativo:'b-neg'}[c.sentimento]||'b-neu';
-    const d=document.createElement('div'); d.className='call'; d.style.animationDelay=(i*.04)+'s';
-    d.onclick=()=>abrir(c.id);
+    const cls={positivo:'b-pos',neutro:'b-neu',negativo:'b-neg'}[c.sentimento]||'b-neu';
+    const d=document.createElement('div'); d.className='call'; d.style.animationDelay=(i*.04)+'s'; d.onclick=()=>abrir(c.id);
     d.innerHTML=`<div class="name">${esc(c.cliente||'Cliente não identificado')}</div>
       <div class="meta">${new Date(c.data_call).toLocaleString('pt-BR')}</div>
-      <div class="badges">
-        <span class="badge ${sb_}">${esc(c.sentimento||'—')}</span>
-        <span class="badge b-score">Score ${c.score_oportunidade??'—'}</span>
-      </div>`;
+      <div class="badges"><span class="badge ${cls}">${esc(c.sentimento||'—')}</span><span class="badge b-score">Score ${c.score_oportunidade??'—'}</span></div>`;
     g.appendChild(d);
   });
 }
+
+// ---- Marketing (agrega de todas as calls) ----
+function tally(key){
+  const m={};
+  CALLS.forEach(c=>((c.analise&&c.analise[key])||[]).forEach(it=>{const k=(''+it).trim();if(k)m[k]=(m[k]||0)+1;}));
+  return Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,10);
+}
+function barras(pairs){
+  if(!pairs.length) return '<p style="color:var(--muted)">Sem dados ainda.</p>';
+  const max=pairs[0][1];
+  return pairs.map(([t,n])=>`<div class="bar-row"><div class="lbl"><span>${esc(t)}</span><b>${n}</b></div><div class="bar"><span style="width:${Math.round(n/max*100)}%"></span></div></div>`).join('');
+}
+function renderMkt(){
+  document.getElementById('mktContent').innerHTML=`
+    <div class="panel"><h3>🩺 Principais dores dos clientes</h3>${barras(tally('dores'))}</div>
+    <div class="panel"><h3>📣 Ganchos para anúncios</h3>${barras(tally('ganchos_marketing'))}</div>
+    <div class="panel"><h3>🎯 Necessidades mais citadas</h3>${barras(tally('necessidades'))}</div>
+    <div class="panel"><h3>🆚 Concorrentes citados</h3>${barras(tally('concorrentes_citados'))}</div>`;
+}
+
+// ---- Panorama por vendedor ----
+function renderVend(){
+  const by={};
+  CALLS.forEach(c=>{(by[c.user_id]=by[c.user_id]||[]).push(c);});
+  const el=document.getElementById('vendContent'); el.innerHTML='';
+  const ids=Object.keys(by);
+  if(!ids.length){ el.innerHTML='<p style="color:var(--muted)">Sem calls ainda.</p>'; return; }
+  ids.forEach(uid=>{
+    const cs=by[uid]; const nome=(PERFIS[uid]&&(PERFIS[uid].nome||PERFIS[uid].email))||'Vendedor';
+    const avg=Math.round(cs.reduce((s,c)=>s+(c.score_oportunidade||0),0)/cs.length);
+    const pos=cs.filter(c=>c.sentimento==='positivo').length;
+    const d=document.createElement('div'); d.className='call'; d.style.cursor='default';
+    d.innerHTML=`<div class="name">${esc(nome)}</div>
+      <div class="meta">${cs.length} call(s)</div>
+      <div class="badges"><span class="badge b-score">Score médio ${avg}</span><span class="badge b-pos">${pos} positivas</span></div>`;
+    el.appendChild(d);
+  });
+}
+
+// ---- detalhe ----
 function abrir(id){
-  const c=CALLS.find(x=>x.id===id); if(!c) return; CUR=c;
+  const c=CALLS.find(x=>x.id===id); if(!c)return; CUR=c;
   document.getElementById('detTitle').textContent=c.cliente||'Cliente não identificado';
   document.getElementById('detSub').textContent=new Date(c.data_call).toLocaleString('pt-BR');
   const a=c.analise||{};
