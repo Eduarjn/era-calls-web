@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ERA · Inteligência de Calls</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0e1116;--bg2:#151a22;--card:#1b212b;--card2:#222a36;--txt:#e8edf4;--muted:#8b97a8;--line:#2a3340;
+    --accent:#7c5cff;--accent2:#22d3ee;--amber:#f5a623;--blue:#4aa8ff;--green:#34d399;--red:#f87171;
+    --shadow:0 10px 30px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;background:radial-gradient(1200px 600px at 80% -10%,#1a2030 0%,var(--bg) 55%);
+    color:var(--txt);font-family:'Inter',system-ui,sans-serif}
+  h1,h2,h3{font-family:'Barlow Condensed','Inter',sans-serif;letter-spacing:.3px;margin:0}
+  .hidden{display:none!important}
+  .btn{border:none;border-radius:10px;padding:11px 18px;font-weight:600;cursor:pointer;font-size:14px;
+    display:inline-flex;align-items:center;gap:8px;transition:transform .12s,box-shadow .2s,opacity .2s;font-family:'Inter'}
+  .btn:hover{transform:translateY(-2px)} .btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+  .btn-primary{background:linear-gradient(135deg,var(--accent),#6b4dff);color:#fff;box-shadow:0 6px 18px rgba(124,92,255,.4)}
+  .btn-ghost{background:var(--card2);color:var(--txt)} .btn-soft{background:transparent;color:var(--muted);border:1px solid var(--line)}
+  input{width:100%;padding:12px 14px;border-radius:10px;border:1px solid var(--line);background:#11161d;color:var(--txt);font-size:15px;font-family:'Inter'}
+  input:focus{outline:none;border-color:var(--accent)}
+  label{font-size:13px;color:var(--muted);display:block;margin:14px 0 6px}
+
+  /* LOGIN */
+  #login{min-height:100vh;display:grid;place-items:center;padding:20px}
+  .loginbox{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:34px 30px;width:360px;box-shadow:var(--shadow);animation:pop .3s}
+  .logo{width:50px;height:50px;border-radius:14px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:grid;place-items:center;font-size:26px;margin-bottom:14px}
+  .err{background:rgba(248,113,113,.12);color:var(--red);border-radius:8px;padding:10px;font-size:13px;margin-top:12px;text-align:center}
+
+  /* APP */
+  header{display:flex;align-items:center;gap:14px;padding:18px 26px;border-bottom:1px solid var(--line);background:rgba(20,25,33,.6);backdrop-filter:blur(8px);position:sticky;top:0;z-index:5}
+  header h1{font-size:22px} header .sub{color:var(--muted);font-size:12px}
+  .spacer{flex:1}
+  main{padding:24px 26px;max-width:1180px;margin:0 auto}
+  .upload{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:24px;animation:rise .4s both}
+  .drop{border:2px dashed var(--line);border-radius:14px;padding:26px;text-align:center;color:var(--muted);cursor:pointer;transition:.2s;margin-top:8px}
+  .drop:hover,.drop.over{border-color:var(--accent);background:rgba(124,92,255,.06);color:var(--txt)}
+  .row{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end}
+  .row>div{flex:1;min-width:200px}
+
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px 18px}
+  .stat .n{font-family:'Barlow Condensed';font-size:32px;font-weight:700;line-height:1}
+  .stat .l{color:var(--muted);font-size:12px;margin-top:4px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
+  .call{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;cursor:pointer;transition:.15s;animation:rise .4s both}
+  .call:hover{border-color:#3a4658;transform:translateY(-3px)}
+  .call .name{font-weight:600;font-size:16px} .call .meta{color:var(--muted);font-size:12px;margin-top:3px}
+  .badges{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+  .badge{font-size:11px;font-weight:700;padding:5px 10px;border-radius:999px}
+  .b-pos{background:rgba(52,211,153,.15);color:var(--green)} .b-neu{background:rgba(245,166,35,.15);color:var(--amber)} .b-neg{background:rgba(248,113,113,.15);color:var(--red)}
+  .b-score{background:rgba(124,92,255,.15);color:#b6a4ff}
+
+  .overlay{position:fixed;inset:0;background:rgba(5,8,12,.66);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:50;padding:20px}
+  .overlay.show{display:flex;animation:fade .2s}
+  .modal{background:var(--bg2);border:1px solid var(--line);border-radius:20px;width:min(780px,96vw);max-height:90vh;overflow:auto;box-shadow:var(--shadow);animation:pop .28s cubic-bezier(.2,.8,.2,1.05)}
+  .modal .head{display:flex;justify-content:space-between;align-items:flex-start;padding:20px 24px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg2)}
+  .x{background:none;border:none;color:var(--muted);font-size:24px;cursor:pointer} .x:hover{color:#fff}
+  .body{padding:22px 24px}
+  .rcard{border-radius:14px;padding:15px 17px;margin-bottom:13px;border:1px solid var(--line);animation:rise .35s both}
+  .rcard h3{font-size:16px;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+  .rcard ul{margin:6px 0 0;padding-left:18px} .rcard li{margin:4px 0;line-height:1.5}
+  .rcard p{margin:0;line-height:1.55;color:#dbe2ec}
+  .tabs{display:flex;gap:8px;margin-bottom:16px}
+  .tab{padding:8px 14px;border-radius:10px;background:var(--card);color:var(--muted);cursor:pointer;font-weight:600;font-size:13px;border:1px solid var(--line)}
+  .tab.active{background:var(--accent);color:#fff;border-color:transparent}
+  .transcript{white-space:pre-wrap;line-height:1.6;color:#cfd8e3;font-size:14px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;max-height:50vh;overflow:auto}
+
+  .spinner{width:54px;height:54px;border-radius:50%;border:5px solid rgba(124,92,255,.2);border-top-color:var(--accent);animation:spin 1s linear infinite;margin:6px auto 16px}
+  .checkmark{width:58px;height:58px;margin:6px auto 14px;border-radius:50%;background:rgba(52,211,153,.15);display:grid;place-items:center;font-size:28px;color:var(--green);animation:pop .4s}
+  .progress{text-align:center;padding:34px 28px}
+  .empty{text-align:center;color:var(--muted);padding:50px 20px}
+  @keyframes spin{to{transform:rotate(360deg)}}@keyframes fade{from{opacity:0}to{opacity:1}}
+  @keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes pop{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+  @media(max-width:680px){.stats{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login">
+  <form class="loginbox" onsubmit="entrar(event)">
+    <div class="logo">🎧</div>
+    <h1 style="font-size:26px">ERA · Inteligência de Calls</h1>
+    <p style="color:var(--muted);font-size:13px;margin:4px 0 18px">Entre para analisar suas reuniões</p>
+    <label>E-mail</label><input id="email" type="email" autocomplete="username">
+    <label>Senha</label><input id="senha" type="password" autocomplete="current-password">
+    <button class="btn btn-primary" style="width:100%;margin-top:20px;justify-content:center" type="submit">Entrar</button>
+    <div id="loginErr" class="err hidden"></div>
+  </form>
+</div>
+
+<!-- APP -->
+<div id="app" class="hidden">
+  <header>
+    <div class="logo" style="width:40px;height:40px;font-size:20px">🎧</div>
+    <div><h1>Inteligência de Calls</h1><div class="sub" id="userEmail"></div></div>
+    <div class="spacer"></div>
+    <button class="btn btn-ghost" onclick="carregar()">↻ Atualizar</button>
+    <button class="btn btn-soft" onclick="sair()">Sair</button>
+  </header>
+  <main>
+    <div class="upload">
+      <h2 style="font-size:18px;margin-bottom:6px">Nova call</h2>
+      <div class="row">
+        <div><label>Cliente (opcional)</label><input id="cliente" placeholder="Nome do cliente"></div>
+      </div>
+      <div class="drop" id="drop">📂 Arraste o mp3 aqui ou clique para escolher
+        <div id="fileName" style="margin-top:8px;color:var(--accent);font-weight:600"></div>
+      </div>
+      <input id="file" type="file" accept="audio/*,video/*" class="hidden">
+      <button class="btn btn-primary" id="btnEnviar" style="margin-top:14px" onclick="enviar()" disabled>⚡ Enviar e analisar</button>
+    </div>
+
+    <div class="stats" id="stats"></div>
+    <h2 style="font-size:20px;margin-bottom:14px">Calls analisadas</h2>
+    <div class="grid" id="grid"></div>
+    <div class="empty hidden" id="empty">Nenhuma call ainda. Envie um mp3 acima para começar.</div>
+  </main>
+</div>
+
+<!-- PROGRESS -->
+<div class="overlay" id="ovProg"><div class="modal" style="width:min(420px,94vw)"><div class="progress" id="progBody"></div></div></div>
+<!-- DETALHE -->
+<div class="overlay" id="ovDet"><div class="modal">
+  <div class="head">
+    <div><h2 id="detTitle" style="font-size:22px"></h2><div class="sub" id="detSub" style="color:var(--muted);font-size:13px"></div></div>
+    <button class="x" onclick="fechar('ovDet')">×</button>
+  </div>
+  <div class="body">
+    <div class="tabs"><div class="tab active" id="tabA" onclick="tab('a')">📊 Análise</div><div class="tab" id="tabT" onclick="tab('t')">📝 Transcrição</div></div>
+    <div id="paneA"></div><div id="paneT" class="hidden"></div>
+  </div>
+</div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = "https://lhncmqqnyxqkxfhiafaz.supabase.co";
+const SUPABASE_KEY = "sb_publishable_9zXFMPKbxrrDM8t5ecjY5Q_p4wCipFB";
+const FUNC = "quick-responder";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let USER=null, CALLS=[], CUR=null, FILE=null;
+
+function esc(s){return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function lista(arr){ if(!arr||!arr.length) return '<p style="color:var(--muted)">—</p>';
+  return '<ul>'+arr.map(x=>'<li>'+esc(typeof x==='string'?x:JSON.stringify(x))+'</li>').join('')+'</ul>'; }
+
+async function init(){
+  const {data:{session}} = await sb.auth.getSession();
+  if(session){ mostrarApp(session.user); }
+}
+async function entrar(e){
+  e.preventDefault();
+  const email=document.getElementById('email').value, senha=document.getElementById('senha').value;
+  const {data,error}=await sb.auth.signInWithPassword({email,password:senha});
+  const box=document.getElementById('loginErr');
+  if(error){ box.textContent='E-mail ou senha incorretos.'; box.classList.remove('hidden'); return; }
+  mostrarApp(data.user);
+}
+function mostrarApp(user){
+  USER=user;
+  document.getElementById('login').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  document.getElementById('userEmail').textContent=user.email;
+  carregar();
+}
+async function sair(){ await sb.auth.signOut(); location.reload(); }
+
+// ---- upload ----
+const drop=document.getElementById('drop'), fileInput=document.getElementById('file');
+drop.onclick=()=>fileInput.click();
+fileInput.onchange=()=>setFile(fileInput.files[0]);
+drop.ondragover=e=>{e.preventDefault();drop.classList.add('over')};
+drop.ondragleave=()=>drop.classList.remove('over');
+drop.ondrop=e=>{e.preventDefault();drop.classList.remove('over');setFile(e.dataTransfer.files[0])};
+function setFile(f){ FILE=f; document.getElementById('fileName').textContent=f?f.name:''; document.getElementById('btnEnviar').disabled=!f; }
+
+async function enviar(){
+  if(!FILE) return;
+  const cliente=document.getElementById('cliente').value||null;
+  showProg('<div class="spinner"></div><h2>Enviando áudio…</h2><p style="color:var(--muted)">Subindo o arquivo para a nuvem.</p>');
+  try{
+    const safe=FILE.name.replace(/[^\w.\-]+/g,'_');
+    const path=`${USER.id}/${Date.now()}_${safe}`;
+    const up=await sb.storage.from('audios').upload(path,FILE,{contentType:FILE.type||'audio/mpeg'});
+    if(up.error) throw up.error;
+    showProg('<div class="spinner"></div><h2>Transcrevendo e analisando…</h2><p style="color:var(--muted)">Groq transcreve e a IA monta a análise. Pode levar alguns segundos.</p>');
+    const {data,error}=await sb.functions.invoke(FUNC,{body:{audio_path:path,cliente}});
+    if(error){ let msg=error.message; try{const c=await error.context.json();msg=c.error||msg}catch(_){ } throw new Error(msg); }
+    if(data&&data.error) throw new Error(data.error);
+    showProg('<div class="checkmark">✓</div><h2>Pronto!</h2><p style="color:var(--muted)">Análise gerada.</p><div style="margin-top:18px"><button class="btn btn-primary" onclick="fechar(\'ovProg\');limparUpload()">Ver na lista</button></div>');
+    carregar();
+  }catch(err){
+    showProg('<div class="checkmark" style="background:rgba(248,113,113,.15);color:var(--red)">!</div><h2>Ops…</h2><p style="color:var(--muted)">'+esc(err.message||err)+'</p><div style="margin-top:18px"><button class="btn btn-ghost" onclick="fechar(\'ovProg\')">Fechar</button></div>');
+  }
+}
+function limparUpload(){ FILE=null;fileInput.value='';document.getElementById('fileName').textContent='';document.getElementById('cliente').value='';document.getElementById('btnEnviar').disabled=true; }
+
+// ---- lista ----
+async function carregar(){
+  const {data,error}=await sb.from('calls').select('*').order('data_call',{ascending:false});
+  if(error){ console.error(error); return; }
+  CALLS=data||[]; render();
+}
+function render(){
+  document.getElementById('empty').classList.toggle('hidden',CALLS.length>0);
+  const pos=CALLS.filter(c=>c.sentimento==='positivo').length;
+  const avg=CALLS.length?Math.round(CALLS.reduce((s,c)=>s+(c.score_oportunidade||0),0)/CALLS.length):0;
+  document.getElementById('stats').innerHTML=`
+    <div class="stat"><div class="n">${CALLS.length}</div><div class="l">Calls analisadas</div></div>
+    <div class="stat"><div class="n" style="color:var(--green)">${pos}</div><div class="l">Sentimento positivo</div></div>
+    <div class="stat"><div class="n" style="color:#b6a4ff">${avg}</div><div class="l">Score médio</div></div>
+    <div class="stat"><div class="n" style="color:var(--blue)">${new Set(CALLS.map(c=>c.cliente).filter(Boolean)).size}</div><div class="l">Clientes</div></div>`;
+  const g=document.getElementById('grid'); g.innerHTML='';
+  CALLS.forEach((c,i)=>{
+    const sb_={positivo:'b-pos',neutro:'b-neu',negativo:'b-neg'}[c.sentimento]||'b-neu';
+    const d=document.createElement('div'); d.className='call'; d.style.animationDelay=(i*.04)+'s';
+    d.onclick=()=>abrir(c.id);
+    d.innerHTML=`<div class="name">${esc(c.cliente||'Cliente não identificado')}</div>
+      <div class="meta">${new Date(c.data_call).toLocaleString('pt-BR')}</div>
+      <div class="badges">
+        <span class="badge ${sb_}">${esc(c.sentimento||'—')}</span>
+        <span class="badge b-score">Score ${c.score_oportunidade??'—'}</span>
+      </div>`;
+    g.appendChild(d);
+  });
+}
+function abrir(id){
+  const c=CALLS.find(x=>x.id===id); if(!c) return; CUR=c;
+  document.getElementById('detTitle').textContent=c.cliente||'Cliente não identificado';
+  document.getElementById('detSub').textContent=new Date(c.data_call).toLocaleString('pt-BR');
+  const a=c.analise||{};
+  document.getElementById('paneA').innerHTML=`
+    <div class="rcard"><h3>📌 Resumo</h3><p>${esc(c.resumo||a.resumo||'—')}</p></div>
+    <div class="rcard"><h3>🩺 Dores do cliente</h3>${lista(a.dores)}</div>
+    <div class="rcard"><h3>🎯 O que o cliente precisa</h3>${lista(a.necessidades)}</div>
+    <div class="rcard"><h3>💡 Como a ferramenta ajuda</h3>${lista(a.como_a_ferramenta_ajuda)}</div>
+    <div class="rcard"><h3>🧱 Objeções</h3>${lista(a.objecoes)}</div>
+    <div class="rcard"><h3>🆚 Concorrentes citados</h3>${lista(a.concorrentes_citados)}</div>
+    <div class="rcard"><h3>📈 Melhorias do vendedor</h3>${lista(a.pontos_melhoria_vendedor)}</div>
+    <div class="rcard"><h3>📣 Ganchos de marketing</h3>${lista(a.ganchos_marketing)}</div>
+    <div class="rcard"><h3>✅ Próximos passos</h3>${lista(a.proximos_passos)}</div>`;
+  document.getElementById('paneT').innerHTML='<div class="transcript">'+esc(c.transcript||'—')+'</div>';
+  tab('a'); document.getElementById('ovDet').classList.add('show');
+}
+function tab(q){ const a=q==='a';
+  document.getElementById('tabA').classList.toggle('active',a);document.getElementById('tabT').classList.toggle('active',!a);
+  document.getElementById('paneA').classList.toggle('hidden',!a);document.getElementById('paneT').classList.toggle('hidden',a);}
+function showProg(html){ document.getElementById('progBody').innerHTML=html; document.getElementById('ovProg').classList.add('show'); }
+function fechar(id){ document.getElementById(id).classList.remove('show'); }
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){fechar('ovDet');fechar('ovProg');}});
+
+init();
+</script>
+</body>
+</html>
