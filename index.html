@@ -4,84 +4,88 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ERA · Inteligência de Calls</title>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#0e1116;--bg2:#151a22;--card:#1b212b;--card2:#222a36;--txt:#e8edf4;--muted:#8b97a8;--line:#2a3340;
-    --accent:#7c5cff;--accent2:#22d3ee;--amber:#f5a623;--blue:#4aa8ff;--green:#34d399;--red:#f87171;
-    --shadow:0 10px 30px rgba(0,0,0,.35);
+    --bg:#faf9f5;--bg2:#ffffff;--card:#ffffff;--card2:#F1F0F7;
+    --txt:#1F2041;--ink:#3A3A57;--muted:#6B6B80;--line:#E6E5EE;
+    --navy:#1F2041;--accent:#4B3F72;--accent2:#417B5A;--beige:#E9D2C0;
+    --green:#417B5A;--amber:#7A5840;--red:#C0392B;--blue:#45466B;
+    --shadow:0 10px 30px rgba(31,32,65,.10);
   }
   *{box-sizing:border-box}
-  body{margin:0;min-height:100vh;background:radial-gradient(1200px 600px at 80% -10%,#1a2030 0%,var(--bg) 55%);
-    color:var(--txt);font-family:'Inter',system-ui,sans-serif}
-  h1,h2,h3{font-family:'Barlow Condensed','Inter',sans-serif;letter-spacing:.3px;margin:0}
+  body{margin:0;min-height:100vh;background:radial-gradient(1200px 600px at 80% -10%,#F4E6DA 0%,var(--bg) 55%);
+    color:var(--ink);font-family:'Inter',system-ui,sans-serif}
+  h1,h2,h3{font-family:'Quicksand','Inter',sans-serif;letter-spacing:.2px;margin:0;color:var(--navy)}
   .hidden{display:none!important}
-  .btn{border:none;border-radius:10px;padding:11px 18px;font-weight:600;cursor:pointer;font-size:14px;
+  .btn{border:none;border-radius:11px;padding:11px 18px;font-weight:600;cursor:pointer;font-size:14px;
     display:inline-flex;align-items:center;gap:8px;transition:transform .12s,box-shadow .2s,opacity .2s;font-family:'Inter'}
   .btn:hover{transform:translateY(-2px)} .btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
-  .btn-primary{background:linear-gradient(135deg,var(--accent),#6b4dff);color:#fff;box-shadow:0 6px 18px rgba(124,92,255,.4)}
-  .btn-ghost{background:var(--card2);color:var(--txt)} .btn-soft{background:transparent;color:var(--muted);border:1px solid var(--line)}
-  input{width:100%;padding:12px 14px;border-radius:10px;border:1px solid var(--line);background:#11161d;color:var(--txt);font-size:15px;font-family:'Inter'}
+  .btn-primary{background:linear-gradient(135deg,#4B3F72,#1F2041);color:#fff;box-shadow:0 6px 18px rgba(75,63,114,.30)}
+  .btn-ghost{background:#EDEDF4;color:var(--navy)} .btn-soft{background:transparent;color:var(--muted);border:1px solid var(--line)}
+  input{width:100%;padding:12px 14px;border-radius:11px;border:1px solid var(--line);background:#fff;color:var(--navy);font-size:15px;font-family:'Inter'}
   input:focus{outline:none;border-color:var(--accent)}
   label{font-size:13px;color:var(--muted);display:block;margin:14px 0 6px}
 
   #login{min-height:100vh;display:grid;place-items:center;padding:20px}
-  .loginbox{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:34px 30px;width:360px;box-shadow:var(--shadow);animation:pop .3s}
-  .logo{width:50px;height:50px;border-radius:14px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:grid;place-items:center;font-size:26px;margin-bottom:14px}
-  .err{background:rgba(248,113,113,.12);color:var(--red);border-radius:8px;padding:10px;font-size:13px;margin-top:12px;text-align:center}
+  .loginbox{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:36px 32px;width:368px;box-shadow:var(--shadow);animation:pop .3s}
+  .logo{width:52px;height:52px;border-radius:15px;background:linear-gradient(135deg,#4B3F72,#417B5A);display:grid;place-items:center;font-size:26px;color:#fff}
+  .err{background:rgba(192,57,43,.10);color:var(--red);border-radius:9px;padding:10px;font-size:13px;margin-top:12px;text-align:center}
 
-  header{display:flex;align-items:center;gap:14px;padding:18px 26px;border-bottom:1px solid var(--line);background:rgba(20,25,33,.6);backdrop-filter:blur(8px);position:sticky;top:0;z-index:5}
+  header{display:flex;align-items:center;gap:14px;padding:16px 26px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.75);backdrop-filter:blur(10px);position:sticky;top:0;z-index:5}
   header h1{font-size:22px} header .sub{color:var(--muted);font-size:12px}
   .spacer{flex:1}
   main{padding:24px 26px;max-width:1180px;margin:0 auto}
   .viewnav{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
-  .vtab{padding:9px 16px;border-radius:10px;background:var(--card);color:var(--muted);border:1px solid var(--line);cursor:pointer;font-weight:600;font-size:14px}
+  .vtab{padding:9px 16px;border-radius:11px;background:#fff;color:var(--muted);border:1px solid var(--line);cursor:pointer;font-weight:600;font-size:14px}
   .vtab.active{background:var(--accent);color:#fff;border-color:transparent}
 
-  .upload{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:24px;animation:rise .4s both}
-  .drop{border:2px dashed var(--line);border-radius:14px;padding:26px;text-align:center;color:var(--muted);cursor:pointer;transition:.2s;margin-top:8px}
-  .drop:hover,.drop.over{border-color:var(--accent);background:rgba(124,92,255,.06);color:var(--txt)}
+  .card,.upload,.stat,.call,.panel{background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow)}
+  .upload{border-radius:16px;padding:20px;margin-bottom:24px;animation:rise .4s both}
+  .drop{border:2px dashed #D2D0E0;border-radius:14px;padding:26px;text-align:center;color:var(--muted);cursor:pointer;transition:.2s;margin-top:8px}
+  .drop:hover,.drop.over{border-color:var(--accent);background:rgba(75,63,114,.05);color:var(--navy)}
 
   .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
-  .stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px 18px}
-  .stat .n{font-family:'Barlow Condensed';font-size:32px;font-weight:700;line-height:1}
+  .stat{border-radius:14px;padding:15px 18px}
+  .stat .n{font-family:'Quicksand';font-size:32px;font-weight:700;line-height:1;color:var(--navy)}
   .stat .l{color:var(--muted);font-size:12px;margin-top:4px}
   .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
-  .call{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;cursor:pointer;transition:.15s;animation:rise .4s both}
-  .call:hover{border-color:#3a4658;transform:translateY(-3px)}
-  .call .name{font-weight:600;font-size:16px} .call .meta{color:var(--muted);font-size:12px;margin-top:3px}
+  .call{border-radius:16px;padding:18px;cursor:pointer;transition:.15s;animation:rise .4s both}
+  .call:hover{border-color:#C9C7DE;transform:translateY(-3px)}
+  .call .name{font-weight:700;font-size:16px;color:var(--navy);font-family:'Quicksand'} .call .meta{color:var(--muted);font-size:12px;margin-top:3px}
   .badges{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
   .badge{font-size:11px;font-weight:700;padding:5px 10px;border-radius:999px}
-  .b-pos{background:rgba(52,211,153,.15);color:var(--green)} .b-neu{background:rgba(245,166,35,.15);color:var(--amber)} .b-neg{background:rgba(248,113,113,.15);color:var(--red)}
-  .b-score{background:rgba(124,92,255,.15);color:#b6a4ff}
+  .b-pos{background:rgba(65,123,90,.14);color:#2A6045} .b-neu{background:rgba(122,88,64,.14);color:#7A5840} .b-neg{background:rgba(192,57,43,.12);color:#C0392B}
+  .b-score{background:rgba(75,63,114,.12);color:#4B3F72}
 
-  .panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:16px;animation:rise .4s both}
+  .panel{border-radius:16px;padding:20px;margin-bottom:16px;animation:rise .4s both}
   .panel h3{font-size:18px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
   .bar-row{margin:9px 0}
-  .bar-row .lbl{display:flex;justify-content:space-between;gap:10px;font-size:14px;margin-bottom:5px}
+  .bar-row .lbl{display:flex;justify-content:space-between;gap:10px;font-size:14px;margin-bottom:5px;color:var(--ink)}
   .bar-row .lbl b{color:var(--muted);font-weight:600}
-  .bar{height:8px;border-radius:6px;background:var(--card2);overflow:hidden}
-  .bar>span{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .5s}
+  .bar{height:8px;border-radius:6px;background:#EDEDF4;overflow:hidden}
+  .bar>span{display:block;height:100%;background:linear-gradient(90deg,#4B3F72,#417B5A);transition:width .5s}
 
-  .overlay{position:fixed;inset:0;background:rgba(5,8,12,.66);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:50;padding:20px}
+  .overlay{position:fixed;inset:0;background:rgba(31,32,65,.45);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:50;padding:20px}
   .overlay.show{display:flex;animation:fade .2s}
-  .modal{background:var(--bg2);border:1px solid var(--line);border-radius:20px;width:min(780px,96vw);max-height:90vh;overflow:auto;box-shadow:var(--shadow);animation:pop .28s cubic-bezier(.2,.8,.2,1.05)}
-  .modal .head{display:flex;justify-content:space-between;align-items:flex-start;padding:20px 24px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg2)}
-  .x{background:none;border:none;color:var(--muted);font-size:24px;cursor:pointer} .x:hover{color:#fff}
+  .modal{background:#fff;border:1px solid var(--line);border-radius:20px;width:min(780px,96vw);max-height:90vh;overflow:auto;box-shadow:var(--shadow);animation:pop .28s cubic-bezier(.2,.8,.2,1.05)}
+  .modal .head{display:flex;justify-content:space-between;align-items:flex-start;padding:20px 24px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff}
+  .x{background:none;border:none;color:var(--muted);font-size:24px;cursor:pointer} .x:hover{color:var(--navy)}
   .body{padding:22px 24px}
-  .rcard{border-radius:14px;padding:15px 17px;margin-bottom:13px;border:1px solid var(--line);animation:rise .35s both}
+  .rcard{border-radius:14px;padding:15px 17px;margin-bottom:13px;border:1px solid var(--line);background:#FBFBFD;animation:rise .35s both}
   .rcard h3{font-size:16px;margin-bottom:8px;display:flex;align-items:center;gap:8px}
   .rcard ul{margin:6px 0 0;padding-left:18px} .rcard li{margin:4px 0;line-height:1.5}
-  .rcard p{margin:0;line-height:1.55;color:#dbe2ec}
+  .rcard p{margin:0;line-height:1.55;color:var(--ink)}
   .tabs{display:flex;gap:8px;margin-bottom:16px}
-  .tab{padding:8px 14px;border-radius:10px;background:var(--card);color:var(--muted);cursor:pointer;font-weight:600;font-size:13px;border:1px solid var(--line)}
+  .tab{padding:8px 14px;border-radius:10px;background:#fff;color:var(--muted);cursor:pointer;font-weight:600;font-size:13px;border:1px solid var(--line)}
   .tab.active{background:var(--accent);color:#fff;border-color:transparent}
-  .transcript{white-space:pre-wrap;line-height:1.6;color:#cfd8e3;font-size:14px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;max-height:50vh;overflow:auto}
+  .transcript{white-space:pre-wrap;line-height:1.6;color:var(--ink);font-size:14px;background:#F6F6FA;border:1px solid var(--line);border-radius:12px;padding:16px;max-height:50vh;overflow:auto}
 
-  .spinner{width:54px;height:54px;border-radius:50%;border:5px solid rgba(124,92,255,.2);border-top-color:var(--accent);animation:spin 1s linear infinite;margin:6px auto 16px}
-  .checkmark{width:58px;height:58px;margin:6px auto 14px;border-radius:50%;background:rgba(52,211,153,.15);display:grid;place-items:center;font-size:28px;color:var(--green);animation:pop .4s}
+  .spinner{width:54px;height:54px;border-radius:50%;border:5px solid rgba(75,63,114,.18);border-top-color:var(--accent);animation:spin 1s linear infinite;margin:6px auto 16px}
+  .checkmark{width:58px;height:58px;margin:6px auto 14px;border-radius:50%;background:rgba(65,123,90,.15);display:grid;place-items:center;font-size:28px;color:var(--green);animation:pop .4s}
   .progress{text-align:center;padding:34px 28px}
   .empty{text-align:center;color:var(--muted);padding:50px 20px}
+  .ins h3{font-family:'Quicksand';color:var(--navy)} .ins ul{padding-left:18px} .ins li{margin:4px 0;line-height:1.5}
   @keyframes spin{to{transform:rotate(360deg)}}@keyframes fade{from{opacity:0}to{opacity:1}}
   @keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
   @keyframes pop{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
@@ -94,7 +98,7 @@
 <div id="login">
   <form class="loginbox" onsubmit="entrar(event)">
     <div class="logo">🎧</div>
-    <h1 style="font-size:26px">ERA · Inteligência de Calls</h1>
+    <h1 style="font-size:26px;margin-top:14px">ERA · Inteligência de Calls</h1>
     <p style="color:var(--muted);font-size:13px;margin:4px 0 18px">Entre para analisar suas reuniões</p>
     <label>E-mail</label><input id="email" type="email" autocomplete="username">
     <label>Senha</label><input id="senha" type="password" autocomplete="current-password">
@@ -106,7 +110,7 @@
 <!-- APP -->
 <div id="app" class="hidden">
   <header>
-    <div class="logo" style="width:40px;height:40px;font-size:20px">🎧</div>
+    <div class="logo" style="width:42px;height:42px;font-size:20px">🎧</div>
     <div><h1>Inteligência de Calls</h1><div class="sub" id="userEmail"></div></div>
     <div class="spacer"></div>
     <button class="btn btn-ghost" onclick="carregar()">↻ Atualizar</button>
@@ -119,7 +123,6 @@
       <button class="vtab" id="nav-vend" onclick="view('vend')">👥 Vendedores</button>
     </div>
 
-    <!-- VIEW CALLS -->
     <section id="view-calls">
       <div class="upload">
         <h2 style="font-size:18px;margin-bottom:6px">Nova call</h2>
@@ -136,14 +139,14 @@
       <div class="empty hidden" id="empty">Nenhuma call ainda. Envie um áudio acima para começar.</div>
     </section>
 
-    <!-- VIEW MARKETING -->
     <section id="view-mkt" class="hidden">
       <h2 style="font-size:22px;margin-bottom:6px">Inteligência de Marketing</h2>
-      <p style="color:var(--muted);font-size:13px;margin-bottom:18px">O que mais aparece nas calls — use como tema para anúncios e conteúdo.</p>
+      <p style="color:var(--muted);font-size:13px;margin-bottom:16px">O que mais aparece nas calls — base para anúncios, disparos e conteúdo.</p>
+      <button class="btn btn-primary" style="margin-bottom:16px" onclick="gerarInsights()">✨ Gerar insights de campanha</button>
+      <div id="insightsBox"></div>
       <div id="mktContent"></div>
     </section>
 
-    <!-- VIEW VENDEDORES -->
     <section id="view-vend" class="hidden">
       <h2 style="font-size:22px;margin-bottom:18px">Panorama por vendedor</h2>
       <div class="grid" id="vendContent"></div>
@@ -151,7 +154,6 @@
   </main>
 </div>
 
-<!-- PROGRESS / DETALHE -->
 <div class="overlay" id="ovProg"><div class="modal" style="width:min(420px,94vw)"><div class="progress" id="progBody"></div></div></div>
 <div class="overlay" id="ovDet"><div class="modal">
   <div class="head">
@@ -176,6 +178,17 @@ let USER=null, CALLS=[], PERFIS={}, CUR=null, FILE=null;
 function esc(s){return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 function lista(arr){ if(!arr||!arr.length) return '<p style="color:var(--muted)">—</p>';
   return '<ul>'+arr.map(x=>'<li>'+esc(typeof x==='string'?x:JSON.stringify(x))+'</li>').join('')+'</ul>'; }
+function mdToHtml(md){
+  const lines=(md||'').split('\n'); let html=''; let ul=false; const close=()=>{if(ul){html+='</ul>';ul=false;}};
+  for(const raw of lines){
+    let l=esc(raw.trim()).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
+    if(/^#{1,4}\s+/.test(raw)){ close(); html+='<h3 style="margin:14px 0 8px">'+l.replace(/^#+\s+/,'')+'</h3>'; }
+    else if(/^[-*]\s+/.test(raw)){ if(!ul){html+='<ul>';ul=true;} html+='<li>'+l.replace(/^[-*]\s+/,'')+'</li>'; }
+    else if(l===''){ close(); }
+    else { close(); html+='<p style="margin:6px 0;line-height:1.55">'+l+'</p>'; }
+  }
+  close(); return html;
+}
 
 async function init(){ const {data:{session}}=await sb.auth.getSession(); if(session) mostrarApp(session.user); }
 async function entrar(e){
@@ -204,7 +217,6 @@ function view(v){
   if(v==='vend') renderVend();
 }
 
-// ---- upload + COMPRESSÃO de áudio no navegador (resolve limite de 25MB) ----
 const drop=document.getElementById('drop'), fileInput=document.getElementById('file');
 drop.onclick=()=>fileInput.click();
 fileInput.onchange=()=>setFile(fileInput.files[0]);
@@ -214,20 +226,18 @@ drop.ondrop=e=>{e.preventDefault();drop.classList.remove('over');setFile(e.dataT
 function setFile(f){ FILE=f; document.getElementById('fileName').textContent=f?f.name:''; document.getElementById('btnEnviar').disabled=!f; }
 
 async function comprimir(file){
-  // decodifica, converte p/ mono 16kHz e recodifica em mp3 64kbps (bem menor)
-  const buf = await file.arrayBuffer();
-  const ac = new (window.AudioContext||window.webkitAudioContext)();
-  const decoded = await ac.decodeAudioData(buf);
-  const rate = 16000;
-  const off = new OfflineAudioContext(1, Math.ceil(decoded.duration*rate), rate);
-  const src = off.createBufferSource(); src.buffer = decoded; src.connect(off.destination); src.start();
-  const rendered = await off.startRendering();
-  const ch = rendered.getChannelData(0);
-  const int16 = new Int16Array(ch.length);
-  for(let i=0;i<ch.length;i++){ const s=Math.max(-1,Math.min(1,ch[i])); int16[i]=s<0?s*32768:s*32767; }
-  const enc = new lamejs.Mp3Encoder(1, rate, 64);
-  const out=[]; const block=1152;
-  for(let i=0;i<int16.length;i+=block){ const mp3=enc.encodeBuffer(int16.subarray(i,i+block)); if(mp3.length)out.push(mp3); }
+  const buf=await file.arrayBuffer();
+  const ac=new (window.AudioContext||window.webkitAudioContext)();
+  const decoded=await ac.decodeAudioData(buf);
+  const rate=16000;
+  const off=new OfflineAudioContext(1,Math.ceil(decoded.duration*rate),rate);
+  const src=off.createBufferSource(); src.buffer=decoded; src.connect(off.destination); src.start();
+  const rendered=await off.startRendering();
+  const ch=rendered.getChannelData(0);
+  const int16=new Int16Array(ch.length);
+  for(let i=0;i<ch.length;i++){const s=Math.max(-1,Math.min(1,ch[i]));int16[i]=s<0?s*32768:s*32767;}
+  const enc=new lamejs.Mp3Encoder(1,rate,64); const out=[]; const block=1152;
+  for(let i=0;i<int16.length;i+=block){const m=enc.encodeBuffer(int16.subarray(i,i+block));if(m.length)out.push(m);}
   const end=enc.flush(); if(end.length)out.push(end);
   return new Blob(out,{type:'audio/mpeg'});
 }
@@ -236,14 +246,8 @@ async function enviar(){
   if(!FILE) return;
   const cliente=document.getElementById('cliente').value||null;
   let blob=FILE;
-  try{
-    showProg('<div class="spinner"></div><h2>Preparando áudio…</h2><p style="color:var(--muted)">Comprimindo para enviar mais rápido.</p>');
-    blob=await comprimir(FILE);
-  }catch(e){ blob=FILE; } // se não der p/ comprimir, envia original
-  if(blob.size>25*1024*1024){
-    showProg('<div class="checkmark" style="background:rgba(248,113,113,.15);color:var(--red)">!</div><h2>Áudio muito grande</h2><p style="color:var(--muted)">Mesmo comprimido passou de 25MB. Tente uma call mais curta.</p><div style="margin-top:18px"><button class="btn btn-ghost" onclick="fechar(\'ovProg\')">Fechar</button></div>');
-    return;
-  }
+  try{ showProg('<div class="spinner"></div><h2>Preparando áudio…</h2><p style="color:var(--muted)">Comprimindo para enviar mais rápido.</p>'); blob=await comprimir(FILE); }catch(e){ blob=FILE; }
+  if(blob.size>25*1024*1024){ showProg('<div class="checkmark" style="background:rgba(192,57,43,.12);color:var(--red)">!</div><h2>Áudio muito grande</h2><p style="color:var(--muted)">Mesmo comprimido passou de 25MB. Tente uma call mais curta.</p><div style="margin-top:18px"><button class="btn btn-ghost" onclick="fechar(\'ovProg\')">Fechar</button></div>'); return; }
   try{
     showProg('<div class="spinner"></div><h2>Enviando áudio…</h2><p style="color:var(--muted)">Subindo para a nuvem.</p>');
     const base=(FILE.name||'call').replace(/\.[^.]+$/,'').replace(/[^\w.\-]+/g,'_');
@@ -257,14 +261,13 @@ async function enviar(){
     showProg('<div class="checkmark">✓</div><h2>Pronto!</h2><p style="color:var(--muted)">Análise gerada.</p><div style="margin-top:18px"><button class="btn btn-primary" onclick="fechar(\'ovProg\');limpar()">Ver na lista</button></div>');
     carregar();
   }catch(err){
-    showProg('<div class="checkmark" style="background:rgba(248,113,113,.15);color:var(--red)">!</div><h2>Ops…</h2><p style="color:var(--muted)">'+esc(err.message||err)+'</p><div style="margin-top:18px"><button class="btn btn-ghost" onclick="fechar(\'ovProg\')">Fechar</button></div>');
+    showProg('<div class="checkmark" style="background:rgba(192,57,43,.12);color:var(--red)">!</div><h2>Ops…</h2><p style="color:var(--muted)">'+esc(err.message||err)+'</p><div style="margin-top:18px"><button class="btn btn-ghost" onclick="fechar(\'ovProg\')">Fechar</button></div>');
   }
 }
 function limpar(){ FILE=null;fileInput.value='';document.getElementById('fileName').textContent='';document.getElementById('cliente').value='';document.getElementById('btnEnviar').disabled=true; }
 
-// ---- dados ----
 async function carregar(){
-  const [{data:calls},{data:perfis}] = await Promise.all([
+  const [{data:calls},{data:perfis}]=await Promise.all([
     sb.from('calls').select('*').order('data_call',{ascending:false}),
     sb.from('perfis').select('id,nome,email')
   ]);
@@ -278,7 +281,7 @@ function render(){
   document.getElementById('stats').innerHTML=`
     <div class="stat"><div class="n">${CALLS.length}</div><div class="l">Calls analisadas</div></div>
     <div class="stat"><div class="n" style="color:var(--green)">${pos}</div><div class="l">Sentimento positivo</div></div>
-    <div class="stat"><div class="n" style="color:#b6a4ff">${avg}</div><div class="l">Score médio</div></div>
+    <div class="stat"><div class="n" style="color:var(--accent)">${avg}</div><div class="l">Score médio</div></div>
     <div class="stat"><div class="n" style="color:var(--blue)">${new Set(CALLS.map(c=>c.cliente).filter(Boolean)).size}</div><div class="l">Clientes</div></div>`;
   const g=document.getElementById('grid'); g.innerHTML='';
   CALLS.forEach((c,i)=>{
@@ -291,7 +294,6 @@ function render(){
   });
 }
 
-// ---- Marketing (agrega de todas as calls) ----
 function tally(key){
   const m={};
   CALLS.forEach(c=>((c.analise&&c.analise[key])||[]).forEach(it=>{const k=(''+it).trim();if(k)m[k]=(m[k]||0)+1;}));
@@ -309,11 +311,23 @@ function renderMkt(){
     <div class="panel"><h3>🎯 Necessidades mais citadas</h3>${barras(tally('necessidades'))}</div>
     <div class="panel"><h3>🆚 Concorrentes citados</h3>${barras(tally('concorrentes_citados'))}</div>`;
 }
+async function gerarInsights(){
+  if(!CALLS.length){ document.getElementById('insightsBox').innerHTML='<div class="panel" style="color:var(--muted)">Analise algumas calls primeiro.</div>'; return; }
+  const box=document.getElementById('insightsBox');
+  box.innerHTML='<div class="panel"><div class="spinner"></div><p style="text-align:center;color:var(--muted)">Gerando insights de campanha com base nas calls…</p></div>';
+  try{
+    const payload={action:'insights',
+      dores:tally('dores').map(x=>x[0]), ganchos:tally('ganchos_marketing').map(x=>x[0]),
+      necessidades:tally('necessidades').map(x=>x[0]), concorrentes:tally('concorrentes_citados').map(x=>x[0])};
+    const {data,error}=await sb.functions.invoke(FUNC,{body:payload});
+    if(error){ let m=error.message; try{const c=await error.context.json();m=c.error||m}catch(_){ } throw new Error(m); }
+    if(data&&data.error) throw new Error(data.error);
+    box.innerHTML='<div class="panel ins"><h3 style="margin-bottom:10px">✨ Insights de campanha</h3>'+mdToHtml(data.insights||'')+'</div>';
+  }catch(e){ box.innerHTML='<div class="panel" style="color:var(--red)">Erro: '+esc(e.message||e)+'</div>'; }
+}
 
-// ---- Panorama por vendedor ----
 function renderVend(){
-  const by={};
-  CALLS.forEach(c=>{(by[c.user_id]=by[c.user_id]||[]).push(c);});
+  const by={}; CALLS.forEach(c=>{(by[c.user_id]=by[c.user_id]||[]).push(c);});
   const el=document.getElementById('vendContent'); el.innerHTML='';
   const ids=Object.keys(by);
   if(!ids.length){ el.innerHTML='<p style="color:var(--muted)">Sem calls ainda.</p>'; return; }
@@ -322,14 +336,12 @@ function renderVend(){
     const avg=Math.round(cs.reduce((s,c)=>s+(c.score_oportunidade||0),0)/cs.length);
     const pos=cs.filter(c=>c.sentimento==='positivo').length;
     const d=document.createElement('div'); d.className='call'; d.style.cursor='default';
-    d.innerHTML=`<div class="name">${esc(nome)}</div>
-      <div class="meta">${cs.length} call(s)</div>
+    d.innerHTML=`<div class="name">${esc(nome)}</div><div class="meta">${cs.length} call(s)</div>
       <div class="badges"><span class="badge b-score">Score médio ${avg}</span><span class="badge b-pos">${pos} positivas</span></div>`;
     el.appendChild(d);
   });
 }
 
-// ---- detalhe ----
 function abrir(id){
   const c=CALLS.find(x=>x.id===id); if(!c)return; CUR=c;
   document.getElementById('detTitle').textContent=c.cliente||'Cliente não identificado';
