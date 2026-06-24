@@ -351,7 +351,7 @@ function limpar(){ FILE=null;fileInput.value='';document.getElementById('fileNam
 async function carregar(){
   const [{data:calls},{data:perfis}]=await Promise.all([
     sb.from('calls').select('*').order('data_call',{ascending:false}),
-    sb.from('perfis').select('id,nome,email')
+    sb.from('perfis').select('id,nome,email,papel')
   ]);
   CALLS=calls||[]; PERFIS={}; (perfis||[]).forEach(p=>PERFIS[p.id]={nome:p.nome,email:p.email,papel:p.papel});
   MEU = USER ? PERFIS[USER.id] : null;
