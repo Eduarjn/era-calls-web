@@ -36,92 +36,67 @@
   <div class="rec" id="rec">
     <div class="logo">🎙️</div>
     <h1 style="font-size:24px">Gravador de Calls</h1>
-    <p class="desc" style="color:var(--muted);font-size:13px;margin:4px 0 6px">Grava você + cliente e salva o MP3 na pasta da ferramenta.</p>
+    <p class="desc" style="color:var(--muted);font-size:13px;margin:4px 0 6px">Grava você + cliente e envia direto para análise.</p>
 
     <label>Cliente</label>
     <input id="cliente" placeholder="Nome do cliente">
 
     <div class="timer" id="timer">00:00</div>
-    <div class="status" id="status">Escolha a pasta e comece a gravar.</div>
+    <div class="status" id="status">Carregando…</div>
 
     <div style="margin-top:12px">
-      <button class="btn btn-rec" id="btnRec" onclick="toggle()">🔴 Gravar</button>
+      <button class="btn btn-rec" id="btnRec" onclick="toggle()" disabled>🔴 Gravar</button>
     </div>
     <div class="row">
-      <button class="btn btn-soft" id="btnPasta" onclick="escolherPasta()" style="flex:1">📁 Pasta destino</button>
       <button class="btn btn-soft" id="btnPip" onclick="flutuar()" style="flex:1">📌 Flutuar</button>
     </div>
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
 <script>
-let dirHandle=null, mediaRec=null, chunks=[], t0=0, tick=null, gravando=false, pipWin=null;
+const SUPABASE_URL = "https://lhncmqqnyxqkxfhiafaz.supabase.co";
+const SUPABASE_KEY = "sb_publishable_9zXFMPKbxrrDM8t5ecjY5Q_p4wCipFB";
+const FUNC = "quick-responder";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let USER=null, mediaRec=null, chunks=[], t0=0, tick=null, gravando=false, pipWin=null;
 
-// ---- IndexedDB simples p/ guardar a pasta escolhida ----
-function idb(){return new Promise((res,rej)=>{const r=indexedDB.open('grav',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});}
-async function idbSet(k,v){const d=await idb();return new Promise(r=>{d.transaction('kv','readwrite').objectStore('kv').put(v,k).onsuccess=()=>r();});}
-async function idbGet(k){const d=await idb();return new Promise(r=>{const q=d.transaction('kv').objectStore('kv').get(k);q.onsuccess=()=>r(q.result);q.onerror=()=>r(null);});}
+function $(id){ return (pipWin?pipWin.document:document).getElementById(id); }
+function setStatus(t,cls){ const s=$('status'); if(s){ s.innerHTML=t; s.className='status '+(cls||''); } }
 
-function setStatus(t,cls){const e=()=>{const s=(pipWin?pipWin.document:document).getElementById('status');if(s){s.textContent=t;s.className='status '+(cls||'');}};e();}
-function $(id){return (pipWin?pipWin.document:document).getElementById(id);}
-
-async function restaurarPasta(){
-  try{ const h=await idbGet('dir'); if(h){ const p=await h.queryPermission({mode:'readwrite'}); if(p==='granted'){ dirHandle=h; setStatus('Pasta pronta: '+h.name); } } }catch(e){}
-}
-async function escolherPasta(){
-  try{
-    dirHandle=await window.showDirectoryPicker({mode:'readwrite'});
-    await idbSet('dir',dirHandle);
-    setStatus('Pasta escolhida: '+dirHandle.name,'ok');
-  }catch(e){ setStatus('Seleção de pasta cancelada.','erro'); }
-}
-
-async function garantirPasta(){
-  if(!dirHandle){ await escolherPasta(); return !!dirHandle; }
-  const p=await dirHandle.queryPermission({mode:'readwrite'});
-  if(p!=='granted'){ const r=await dirHandle.requestPermission({mode:'readwrite'}); if(r!=='granted'){ await escolherPasta(); } }
-  return !!dirHandle;
+async function init(){
+  const { data:{ session } } = await sb.auth.getSession();
+  if(session){ USER=session.user; $('btnRec').disabled=false; setStatus('Pronto para gravar.'); }
+  else { setStatus('Entre no painel primeiro (aba principal) e reabra o gravador.', 'erro'); }
 }
 
 async function toggle(){ gravando?parar():iniciar(); }
 
 async function iniciar(){
-  if(!(await garantirPasta())){ setStatus('Escolha a pasta de destino primeiro.','erro'); return; }
+  if(!USER){ setStatus('Faça login no painel primeiro.','erro'); return; }
   try{
-    setStatus('Selecione a aba/janela da call e marque "compartilhar áudio".');
+    setStatus('Selecione a tela/janela da call e marque "compartilhar áudio".');
     const disp=await navigator.mediaDevices.getDisplayMedia({video:true,audio:true});
-    if(!disp.getAudioTracks().length){ setStatus('Você não marcou "compartilhar áudio". Tente de novo.','erro'); disp.getTracks().forEach(t=>t.stop()); return; }
+    if(!disp.getAudioTracks().length){ setStatus('Não veio áudio do sistema. No navegador, marque "compartilhar áudio".','erro'); disp.getTracks().forEach(t=>t.stop()); return; }
     const mic=await navigator.mediaDevices.getUserMedia({audio:true});
     const ac=new AudioContext(); const dest=ac.createMediaStreamDestination();
     ac.createMediaStreamSource(new MediaStream(disp.getAudioTracks())).connect(dest);
     ac.createMediaStreamSource(mic).connect(dest);
     chunks=[]; mediaRec=new MediaRecorder(dest.stream,{mimeType:'audio/webm'});
     mediaRec.ondataavailable=e=>{ if(e.data.size)chunks.push(e.data); };
-    mediaRec._extra=[disp,mic,ac];
-    mediaRec.onstop=async()=>{ disp.getTracks().forEach(t=>t.stop()); mic.getTracks().forEach(t=>t.stop()); try{ac.close()}catch(_){} await salvar(); };
-    disp.getVideoTracks()[0].addEventListener('ended',()=>{ if(gravando) parar(); }); // se parar o compartilhamento
+    mediaRec.onstop=async()=>{ disp.getTracks().forEach(t=>t.stop()); mic.getTracks().forEach(t=>t.stop()); try{ac.close()}catch(_){} await enviar(); };
+    const vt=disp.getVideoTracks()[0]; if(vt) vt.addEventListener('ended',()=>{ if(gravando) parar(); });
     mediaRec.start();
-    gravando=true; t0=Date.now(); tick=setInterval(atualizarTimer,500);
+    gravando=true; t0=Date.now(); tick=setInterval(timerTick,500);
     $('btnRec').textContent='⏹ Parar'; $('btnRec').className='btn btn-stop';
     setStatus('<span class="dot"></span> Gravando…');
-    const s=$('status'); if(s) s.innerHTML='<span class="dot"></span> Gravando…';
   }catch(e){ setStatus('Não consegui iniciar: '+(e.message||e),'erro'); }
 }
-
-function parar(){
-  if(!mediaRec) return;
-  gravando=false; clearInterval(tick);
-  $('btnRec').textContent='🔴 Gravar'; $('btnRec').className='btn btn-rec';
-  setStatus('Salvando…');
-  mediaRec.stop();
-}
-
-function atualizarTimer(){
-  const s=Math.floor((Date.now()-t0)/1000);
-  const mm=String(Math.floor(s/60)).padStart(2,'0'), ss=String(s%60).padStart(2,'0');
-  const el=$('timer'); if(el) el.textContent=mm+':'+ss;
-}
+function parar(){ if(!mediaRec) return; gravando=false; clearInterval(tick);
+  $('btnRec').textContent='🔴 Gravar'; $('btnRec').className='btn btn-rec'; mediaRec.stop(); }
+function timerTick(){ const s=Math.floor((Date.now()-t0)/1000);
+  const el=$('timer'); if(el) el.textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); }
 
 async function toMp3(blob){
   const buf=await blob.arrayBuffer();
@@ -139,35 +114,38 @@ async function toMp3(blob){
   return new Blob(out,{type:'audio/mpeg'});
 }
 
-async function salvar(){
+async function enviar(){
   try{
+    setStatus('Preparando áudio…');
     const webm=new Blob(chunks,{type:'audio/webm'});
-    let blob, ext='mp3';
-    try{ blob=await toMp3(webm); }catch(err){ blob=webm; ext='webm'; } // se mp3 falhar, salva webm (uploader converte)
+    const mp3=await toMp3(webm);
+    if(mp3.size>25*1024*1024){ setStatus('Áudio muito grande (>25MB). Tente uma call mais curta.','erro'); return; }
+    setStatus('Enviando para a nuvem…');
     const cli=($('cliente').value||'call').replace(/[^\w.\-]+/g,'_');
-    const d=new Date(); const ts=d.getFullYear()+('0'+(d.getMonth()+1)).slice(-2)+('0'+d.getDate()).slice(-2)+'_'+('0'+d.getHours()).slice(-2)+('0'+d.getMinutes()).slice(-2);
-    const nome=`${cli}_${ts}.${ext}`;
-    const fh=await dirHandle.getFileHandle(nome,{create:true});
-    const w=await fh.createWritable(); await w.write(blob); await w.close();
-    setStatus('Salvo: '+nome+' ✓ (o uploader vai processar)','ok');
+    const path=`${USER.id}/${Date.now()}_${cli}.mp3`;
+    const up=await sb.storage.from('audios').upload(path,mp3,{contentType:'audio/mpeg'});
+    if(up.error) throw up.error;
+    setStatus('Transcrevendo e analisando…');
+    const {data,error}=await sb.functions.invoke(FUNC,{body:{audio_path:path,cliente:($('cliente').value||null)}});
+    if(error){ let m=error.message; try{const c=await error.context.json();m=c.error||m}catch(_){ } throw new Error(m); }
+    if(data&&data.error) throw new Error(data.error);
+    setStatus('Analisado! ✓ Veja no painel.','ok');
     const el=$('timer'); if(el) el.textContent='00:00';
     const c=$('cliente'); if(c) c.value='';
-  }catch(e){ setStatus('Erro ao salvar: '+(e.message||e),'erro'); }
+  }catch(e){ setStatus('Erro: '+(e.message||e),'erro'); }
 }
 
-// ---- Picture-in-Picture (janela flutuante sempre no topo) ----
 async function flutuar(){
-  if(!('documentPictureInPicture' in window)){ setStatus('Seu navegador não suporta janela flutuante (use Chrome/Edge).','erro'); return; }
+  if(!('documentPictureInPicture' in window)){ setStatus('Janela flutuante só no Chrome/Edge (ou no app).','erro'); return; }
   if(pipWin){ pipWin.close(); return; }
   pipWin=await documentPictureInPicture.requestWindow({width:300,height:230});
   pipWin.document.head.appendChild(document.getElementById('css').cloneNode(true));
   pipWin.document.body.classList.add('pip-mode');
-  const box=document.getElementById('rec');
-  pipWin.document.body.appendChild(box);
-  pipWin.addEventListener('pagehide',()=>{ document.getElementById('host').appendChild(box); pipWin=null; });
+  pipWin.document.body.appendChild(document.getElementById('rec'));
+  pipWin.addEventListener('pagehide',()=>{ document.getElementById('host').appendChild(document.getElementById('rec')); pipWin=null; });
 }
 
-restaurarPasta();
+init();
 </script>
 </body>
 </html>
