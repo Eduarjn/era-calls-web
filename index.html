@@ -149,6 +149,7 @@
       <button class="vtab" id="nav-mkt" onclick="view('mkt')">📣 Marketing</button>
       <button class="vtab" id="nav-vend" onclick="view('vend')">👥 Vendedores</button>
       <button class="vtab" id="nav-rel" onclick="view('rel')">📈 Relatórios</button>
+      <button class="vtab hidden" id="nav-usuarios" onclick="view('usuarios')">👤 Usuários</button>
     </div>
 
     <section id="view-calls">
@@ -200,6 +201,25 @@
       <div id="relCharts"></div>
       <div id="relTable"></div>
     </section>
+
+    <section id="view-usuarios" class="hidden">
+      <h2 style="font-size:22px;margin-bottom:14px">Usuários · Acesso</h2>
+      <div class="panel" style="max-width:520px">
+        <h3>➕ Criar novo usuário</h3>
+        <label>Nome</label><input id="uNome" placeholder="Nome da pessoa">
+        <label>E-mail</label><input id="uEmail" type="email" placeholder="email@empresa.com">
+        <label>Senha (mín. 6)</label><input id="uSenha" type="text" placeholder="senha inicial">
+        <label>Papel</label>
+        <select id="uPapel" style="width:100%;padding:12px 14px;border-radius:11px;border:1px solid var(--line);background:#fff;color:var(--navy);font-size:15px;font-family:'Inter'">
+          <option value="vendedor">Vendedor</option>
+          <option value="gestor">Gestor</option>
+          <option value="marketing">Marketing</option>
+        </select>
+        <button class="btn btn-primary" style="margin-top:16px" onclick="criarUsuario()">Criar usuário</button>
+        <div id="uMsg" style="margin-top:12px;font-size:14px"></div>
+      </div>
+      <div class="panel"><h3>👥 Usuários da empresa</h3><div id="uLista"></div></div>
+    </section>
   </main>
 </div>
 
@@ -225,7 +245,7 @@ const SUPABASE_URL = "https://lhncmqqnyxqkxfhiafaz.supabase.co";
 const SUPABASE_KEY = "sb_publishable_9zXFMPKbxrrDM8t5ecjY5Q_p4wCipFB";
 const FUNC = "quick-responder";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-let USER=null, CALLS=[], PERFIS={}, CUR=null, FILE=null, PERIODO='tudo';
+let USER=null, CALLS=[], PERFIS={}, CUR=null, FILE=null, PERIODO='tudo', MEU=null;
 const PARTICIPANTES=['Nicole','Gustavo','Tip','Parceiro'];  // edite aqui para adicionar/trocar pessoas
 const PALETA=['#4B3F72','#417B5A','#C0392B','#E9A23B','#22A39F','#9B59B6','#7A5840','#2A6045','#45466B','#D36B92'];
 function corPessoa(nome){
@@ -269,13 +289,14 @@ function mostrarApp(user){
 async function sair(){ await sb.auth.signOut(); location.reload(); }
 
 function view(v){
-  ['calls','mkt','vend','rel'].forEach(x=>{
+  ['calls','mkt','vend','rel','usuarios'].forEach(x=>{
     document.getElementById('view-'+x).classList.toggle('hidden',x!==v);
     document.getElementById('nav-'+x).classList.toggle('active',x===v);
   });
   if(v==='mkt') renderMkt();
   if(v==='vend') renderVend();
   if(v==='rel') renderRelatorios();
+  if(v==='usuarios') renderUsuarios();
 }
 
 const drop=document.getElementById('drop'), fileInput=document.getElementById('file');
@@ -332,7 +353,9 @@ async function carregar(){
     sb.from('calls').select('*').order('data_call',{ascending:false}),
     sb.from('perfis').select('id,nome,email')
   ]);
-  CALLS=calls||[]; PERFIS={}; (perfis||[]).forEach(p=>PERFIS[p.id]={nome:p.nome,email:p.email});
+  CALLS=calls||[]; PERFIS={}; (perfis||[]).forEach(p=>PERFIS[p.id]={nome:p.nome,email:p.email,papel:p.papel});
+  MEU = USER ? PERFIS[USER.id] : null;
+  document.getElementById('nav-usuarios').classList.toggle('hidden', !(MEU && MEU.papel==='gestor'));
   render();
 }
 function setPeriodo(p){ PERIODO=p; document.querySelectorAll('.per').forEach(b=>b.classList.toggle('active',b.dataset.p===p)); render(); }
@@ -519,6 +542,27 @@ function exportarCSV(){
   const csv=[head,...linhas].map(r=>r.map(x=>'"'+(''+x).replace(/"/g,'""')+'"').join(',')).join('\n');
   const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='relatorio_calls.csv'; a.click(); URL.revokeObjectURL(a.href);
+}
+async function criarUsuario(){
+  const nome=document.getElementById('uNome').value.trim();
+  const email=document.getElementById('uEmail').value.trim();
+  const senha=document.getElementById('uSenha').value;
+  const papel=document.getElementById('uPapel').value;
+  const msg=document.getElementById('uMsg');
+  if(!email||senha.length<6){ msg.style.color='var(--red)'; msg.textContent='Informe e-mail e senha (mín. 6 caracteres).'; return; }
+  msg.style.color='var(--muted)'; msg.textContent='Criando…';
+  const {data,error}=await sb.functions.invoke(FUNC,{body:{action:'criar_usuario',nome,email,senha,papel}});
+  if(error){ let m=error.message; try{const c=await error.context.json();m=c.error||m}catch(_){ } msg.style.color='var(--red)'; msg.textContent='Erro: '+m; return; }
+  if(data&&data.error){ msg.style.color='var(--red)'; msg.textContent='Erro: '+data.error; return; }
+  msg.style.color='var(--green)'; msg.textContent='Usuário criado! ✓  Ele já pode entrar com esse e-mail e senha.';
+  ['uNome','uEmail','uSenha'].forEach(id=>document.getElementById(id).value='');
+  carregar();
+}
+function renderUsuarios(){
+  const arr=Object.values(PERFIS).sort((a,b)=>(a.nome||'').localeCompare(b.nome||''));
+  document.getElementById('uLista').innerHTML = arr.length
+    ? `<div style="overflow:auto"><table class="tbl"><thead><tr><th>Nome</th><th>E-mail</th><th>Papel</th></tr></thead><tbody>${arr.map(u=>`<tr><td>${esc(u.nome||'—')}</td><td>${esc(u.email||'—')}</td><td>${esc(u.papel||'—')}</td></tr>`).join('')}</tbody></table></div>`
+    : '<p style="color:var(--muted)">Nenhum usuário.</p>';
 }
 function abrir(id){
   const c=CALLS.find(x=>x.id===id); if(!c)return; CUR=c;
