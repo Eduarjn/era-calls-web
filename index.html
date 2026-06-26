@@ -624,7 +624,27 @@ function renderTranscricao(c){
     }).join('');
     return '<div class="dialogo">'+html+'</div>';
   }
-  return '<div class="transcript">'+esc(c.transcript||'—')+'</div>';
+  if(!c.transcript){ return '<div class="transcript">—</div>'; }
+  // Sem diálogo ainda (ex.: call longa): oferece separar falas sob demanda.
+  return '<div style="display:flex;justify-content:flex-end;margin-bottom:10px">'
+    + '<button class="btn btn-ghost" id="btnDiar" onclick="diarizarCall(\''+c.id+'\')" style="font-size:13px;padding:8px 14px">🗣️ Separar falas (Nome: fala)</button></div>'
+    + '<div id="diarStatus" style="font-size:13px;color:var(--muted);margin-bottom:8px"></div>'
+    + '<div class="transcript">'+esc(c.transcript)+'</div>';
+}
+async function diarizarCall(id){
+  const btn=document.getElementById('btnDiar'); const st=document.getElementById('diarStatus');
+  if(btn) btn.disabled=true;
+  if(st) st.textContent='Separando falas com IA… pode levar 1-2 min em calls longas, aguarde.';
+  try{
+    const {data,error}=await sb.functions.invoke(FUNC,{body:{action:'diarizar',call_id:id}});
+    if(error){ let m=error.message; try{const cx=await error.context.json();m=cx.error||m}catch(_){ } throw new Error(m); }
+    if(data&&data.error) throw new Error(data.error);
+    const novo=(data&&data.transcript_dialogo)||'';
+    if(!novo.trim()){ if(st) st.textContent='Não consegui separar as falas desta call. Tente de novo daqui a pouco.'; if(btn) btn.disabled=false; return; }
+    const c=CALLS.find(x=>x.id===id); if(c) c.transcript_dialogo=novo;
+    if(CUR&&CUR.id===id) CUR.transcript_dialogo=novo;
+    document.getElementById('paneT').innerHTML=renderTranscricao(c||{id,transcript:'',transcript_dialogo:novo});
+  }catch(e){ if(st) st.textContent='Erro: '+(e.message||e); if(btn) btn.disabled=false; }
 }
 function tab(q){ const a=q==='a';
   document.getElementById('tabA').classList.toggle('active',a);document.getElementById('tabT').classList.toggle('active',!a);

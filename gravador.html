@@ -49,7 +49,12 @@
     </div>
     <div class="row">
       <button class="btn btn-soft" id="btnPip" onclick="flutuar()" style="flex:1">📌 Flutuar</button>
+      <button class="btn btn-soft" id="btnRepro" onclick="reprocessar()" style="flex:1" title="Reenvia para análise um áudio que já está salvo na nuvem (ex.: uma call cuja análise falhou)">🔁 Reprocessar</button>
     </div>
+    <p class="desc" style="color:var(--muted);font-size:11.5px;margin:8px 2px 0">
+      💡 "Reprocessar" recupera uma gravação salva cuja análise falhou. Digite o nome no campo Cliente
+      para escolher a certa, ou deixe vazio para pegar a mais recente.
+    </p>
   </div>
 </div>
 
@@ -129,10 +134,36 @@ async function enviar(){
     const {data,error}=await sb.functions.invoke(FUNC,{body:{audio_path:path,cliente:($('cliente').value||null)}});
     if(error){ let m=error.message; try{const c=await error.context.json();m=c.error||m}catch(_){ } throw new Error(m); }
     if(data&&data.error) throw new Error(data.error);
-    setStatus('Analisado! ✓ Veja no painel.','ok');
+    if(data&&data.status==='parcial') setStatus('Salvo! ✓ A transcrição está no painel. A análise não completou (limite do Groq) — abra a call e clique em "Separar falas"/reprocesse mais tarde.','ok');
+    else setStatus('Analisado! ✓ Veja no painel.','ok');
     const el=$('timer'); if(el) el.textContent='00:00';
     const c=$('cliente'); if(c) c.value='';
   }catch(e){ setStatus('Erro: '+(e.message||e),'erro'); }
+}
+
+// Recupera uma gravação já salva no Storage cuja análise falhou e a reenvia para a função.
+async function reprocessar(){
+  if(!USER){ setStatus('Faça login no painel primeiro.','erro'); return; }
+  const btn=$('btnRepro'); if(btn) btn.disabled=true;
+  try{
+    setStatus('Procurando gravações salvas na nuvem…');
+    const { data:files, error:lerr } = await sb.storage.from('audios')
+      .list(USER.id, { limit:100, sortBy:{ column:'created_at', order:'desc' } });
+    if(lerr) throw lerr;
+    const audios=(files||[]).filter(f=>/\.mp3$/i.test(f.name));
+    if(!audios.length){ setStatus('Nenhuma gravação encontrada na nuvem.','erro'); return; }
+    const filtro=($('cliente').value||'').trim().toLowerCase();
+    const alvo = (filtro ? audios.find(f=>f.name.toLowerCase().includes(filtro)) : null) || audios[0];
+    const path=`${USER.id}/${alvo.name}`;
+    setStatus('Reprocessando: '+alvo.name+' … pode levar 1-2 min (calls longas), aguarde.');
+    const cli=($('cliente').value||null);
+    const {data,error}=await sb.functions.invoke(FUNC,{body:{audio_path:path,cliente:cli}});
+    if(error){ let m=error.message; try{const c=await error.context.json();m=c.error||m}catch(_){ } throw new Error(m); }
+    if(data&&data.error) throw new Error(data.error);
+    if(data&&data.status==='parcial') setStatus('Salvo! ✓ Transcrição no painel. A análise não completou (limite do Groq) — tente reprocessar de novo daqui a pouco.','ok');
+    else setStatus('Pronto! ✓ A call foi analisada — veja no painel.','ok');
+  }catch(e){ setStatus('Erro ao reprocessar: '+(e.message||e),'erro'); }
+  finally{ if(btn) btn.disabled=false; }
 }
 
 async function flutuar(){
