@@ -121,6 +121,11 @@
   .btn-audio:disabled{opacity:.6;cursor:default}
   .audiobar .nota{color:var(--muted);font-size:13px}
   .audiobar a.dl{color:var(--accent);font-size:13px;text-decoration:none;font-weight:600}
+  .rcard-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+  .qual{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .qual>div{background:var(--soft3);border:1px solid var(--line);border-radius:8px;padding:8px 11px}
+  .qual b{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
+  .qual span{font-size:14px;color:var(--ink)}
 
   .spinner{width:54px;height:54px;border-radius:50%;border:5px solid rgba(75,63,114,.18);border-top-color:var(--accent);animation:spin 1s linear infinite;margin:6px auto 16px}
   .checkmark{width:58px;height:58px;margin:6px auto 14px;border-radius:50%;background:rgba(65,123,90,.15);display:grid;place-items:center;font-size:28px;color:var(--green);animation:pop .4s}
@@ -605,21 +610,65 @@ function abrir(id){
   document.getElementById('detSub').textContent=new Date(c.data_call).toLocaleString('pt-BR');
   const a=c.analise||{};
   const part=Array.isArray(c.participantes)?c.participantes:[];
+  const card=(ic,t,arr)=>(arr&&arr.length)?`<div class="rcard"><h3>${ic} ${t}</h3>${lista(arr)}</div>`:'';
+  const q=a.qualificacao||{}; const temQ=q.orcamento||q.autoridade||q.necessidade||q.prazo;
+  const qHtml=temQ?`<div class="rcard"><h3>🧭 Qualificação</h3><div class="qual">
+      <div><b>Orçamento</b><span>${esc(q.orcamento||'—')}</span></div>
+      <div><b>Autoridade</b><span>${esc(q.autoridade||'—')}</span></div>
+      <div><b>Necessidade</b><span>${esc(q.necessidade||'—')}</span></div>
+      <div><b>Prazo</b><span>${esc(q.prazo||'—')}</span></div></div></div>`:'';
   document.getElementById('paneA').innerHTML=`
-    <div class="rcard"><h3>👥 Quem participou</h3>
+    <div class="rcard"><div class="rcard-head"><h3 style="margin:0">👥 Quem participou</h3>
+      <button class="btn-audio" onclick="copiarHandoff('${c.id}',this)">📋 Copiar para CRM</button></div>
       <div class="chips">${PARTICIPANTES.map(p=>`<span class="chip ${part.includes(p)?'on':''}" onclick="toggleP('${c.id}','${p}')">${esc(p)}</span>`).join('')}</div></div>
     <div class="rcard"><h3>📌 Resumo</h3><p>${esc(c.resumo||a.resumo||'—')}</p></div>
-    <div class="rcard"><h3>🩺 Dores do cliente</h3>${lista(a.dores)}</div>
-    <div class="rcard"><h3>🎯 O que o cliente precisa</h3>${lista(a.necessidades)}</div>
-    <div class="rcard"><h3>💡 Como a ferramenta ajuda</h3>${lista(a.como_a_ferramenta_ajuda)}</div>
-    <div class="rcard"><h3>🧱 Objeções</h3>${lista(a.objecoes)}</div>
-    <div class="rcard"><h3>🆚 Concorrentes citados</h3>${lista(a.concorrentes_citados)}</div>
-    <div class="rcard"><h3>📈 Melhorias do vendedor</h3>${lista(a.pontos_melhoria_vendedor)}</div>
-    <div class="rcard"><h3>📣 Ganchos de marketing</h3>${lista(a.ganchos_marketing)}</div>
-    <div class="rcard"><h3>✅ Próximos passos</h3>${lista(a.proximos_passos)}</div>`;
+    ${qHtml}
+    ${card('👥','Stakeholders / decisores',a.stakeholders)}
+    ${card('🗺️','Ambiente atual (stack & volumes)',a.ambiente_atual)}
+    ${card('🩺','Dores & desafios',a.dores)}
+    ${card('🧩','Requisitos técnicos',a.requisitos_tecnicos)}
+    ${card('🎬','Casos de uso',a.casos_de_uso)}
+    ${card('🔌','Integrações necessárias',a.integracoes_necessarias)}
+    ${card('🧱','Objeções',a.objecoes)}
+    ${card('🆚','Concorrentes / incumbente',a.concorrentes_citados)}
+    ${card('⚠️','Riscos & bloqueios',a.riscos_bloqueios)}
+    ${card('🏁','Critérios de sucesso',a.criterios_sucesso)}
+    ${card('❓','Lacunas de descoberta (próxima call)',a.lacunas_descoberta)}
+    ${card('✅','Próximos passos',a.proximos_passos)}
+    ${card('🎯','O que o cliente precisa',a.necessidades)}
+    ${card('💡','Como a ferramenta ajuda',a.como_a_ferramenta_ajuda)}
+    ${card('📈','Melhorias do vendedor',a.pontos_melhoria_vendedor)}
+    ${card('📣','Ganchos de marketing',a.ganchos_marketing)}`;
   document.getElementById('paneT').innerHTML=renderTranscricao(c);
   montarAudio(c);
   tab('a'); document.getElementById('ovDet').classList.add('show');
+}
+function copiarHandoff(id,btn){
+  const c=CALLS.find(x=>x.id===id); if(!c) return;
+  const a=c.analise||{}, q=a.qualificacao||{};
+  const L=(t,arr)=>(arr&&arr.length)?(t+':\n'+arr.map(x=>'  - '+(typeof x==='string'?x:JSON.stringify(x))).join('\n')+'\n\n'):'';
+  let txt='';
+  txt+='CLIENTE: '+(c.cliente||a.cliente||'—')+'\n';
+  txt+='DATA: '+new Date(c.data_call).toLocaleString('pt-BR')+'\n';
+  txt+='RESUMO: '+(c.resumo||a.resumo||'—')+'\n';
+  if(q.orcamento||q.autoridade||q.necessidade||q.prazo)
+    txt+='QUALIFICAÇÃO: orçamento: '+(q.orcamento||'—')+' | autoridade: '+(q.autoridade||'—')+' | necessidade: '+(q.necessidade||'—')+' | prazo: '+(q.prazo||'—')+'\n';
+  txt+='\n';
+  txt+=L('STAKEHOLDERS',a.stakeholders);
+  txt+=L('AMBIENTE ATUAL',a.ambiente_atual);
+  txt+=L('DORES & DESAFIOS',a.dores);
+  txt+=L('REQUISITOS TÉCNICOS',a.requisitos_tecnicos);
+  txt+=L('CASOS DE USO',a.casos_de_uso);
+  txt+=L('INTEGRAÇÕES NECESSÁRIAS',a.integracoes_necessarias);
+  txt+=L('OBJEÇÕES',a.objecoes);
+  txt+=L('CONCORRENTES / INCUMBENTE',a.concorrentes_citados);
+  txt+=L('RISCOS & BLOQUEIOS',a.riscos_bloqueios);
+  txt+=L('CRITÉRIOS DE SUCESSO',a.criterios_sucesso);
+  txt+=L('LACUNAS DE DESCOBERTA',a.lacunas_descoberta);
+  txt+=L('PRÓXIMOS PASSOS',a.proximos_passos);
+  const ok=()=>{ const o=btn.textContent; btn.textContent='✓ Copiado!'; setTimeout(()=>btn.textContent=o,1600); };
+  const fb=()=>{ const ta=document.createElement('textarea'); ta.value=txt.trim(); document.body.appendChild(ta); ta.select(); try{document.execCommand('copy')}catch(_){}; document.body.removeChild(ta); ok(); };
+  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(txt.trim()).then(ok).catch(fb); else fb();
 }
 function montarAudio(c){
   const bar=document.getElementById('audioBar');
