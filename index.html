@@ -114,6 +114,13 @@
   .dialogo{line-height:1.6;color:var(--ink);font-size:14px;background:var(--soft3);border:1px solid var(--line);border-radius:12px;padding:16px;max-height:50vh;overflow:auto}
   .turno{margin:0 0 10px}
   .turno .quem{font-weight:700;color:var(--accent);margin-right:6px}
+  .audiobar{margin:0 0 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .audiobar audio{flex:1;min-width:220px;height:40px}
+  .btn-audio{display:inline-flex;align-items:center;gap:8px;background:var(--soft2);border:1px solid var(--line);color:var(--navy);border-radius:10px;padding:9px 16px;font-weight:600;font-size:14px;cursor:pointer;transition:.15s}
+  .btn-audio:hover{border-color:var(--accent);color:var(--accent)}
+  .btn-audio:disabled{opacity:.6;cursor:default}
+  .audiobar .nota{color:var(--muted);font-size:13px}
+  .audiobar a.dl{color:var(--accent);font-size:13px;text-decoration:none;font-weight:600}
 
   .spinner{width:54px;height:54px;border-radius:50%;border:5px solid rgba(75,63,114,.18);border-top-color:var(--accent);animation:spin 1s linear infinite;margin:6px auto 16px}
   .checkmark{width:58px;height:58px;margin:6px auto 14px;border-radius:50%;background:rgba(65,123,90,.15);display:grid;place-items:center;font-size:28px;color:var(--green);animation:pop .4s}
@@ -249,6 +256,7 @@
   </div>
   <div class="body">
     <div class="tabs"><div class="tab active" id="tabA" onclick="tab('a')">📊 Análise</div><div class="tab" id="tabT" onclick="tab('t')">📝 Transcrição</div></div>
+    <div id="audioBar" class="audiobar"></div>
     <div id="paneA"></div><div id="paneT" class="hidden"></div>
   </div>
 </div></div>
@@ -610,7 +618,29 @@ function abrir(id){
     <div class="rcard"><h3>📣 Ganchos de marketing</h3>${lista(a.ganchos_marketing)}</div>
     <div class="rcard"><h3>✅ Próximos passos</h3>${lista(a.proximos_passos)}</div>`;
   document.getElementById('paneT').innerHTML=renderTranscricao(c);
+  montarAudio(c);
   tab('a'); document.getElementById('ovDet').classList.add('show');
+}
+function montarAudio(c){
+  const bar=document.getElementById('audioBar');
+  if(!c.audio_path){ bar.innerHTML='<span class="nota">🎧 Sem gravação disponível para esta call.</span>'; return; }
+  bar.innerHTML='<button class="btn-audio" onclick="ouvirGravacao(this,\''+c.audio_path.replace(/'/g,"\\'")+'\')">🔊 Ouvir gravação</button>';
+}
+async function ouvirGravacao(btn,path){
+  btn.disabled=true; btn.textContent='Carregando…';
+  try{
+    const {data,error}=await sb.storage.from('audios').createSignedUrl(path,3600);
+    if(error||!data?.signedUrl) throw error||new Error('sem url');
+    const bar=document.getElementById('audioBar');
+    bar.innerHTML='';
+    const audio=document.createElement('audio'); audio.controls=true; audio.autoplay=true; audio.preload='metadata'; audio.src=data.signedUrl;
+    audio.onerror=()=>{ bar.innerHTML='<span class="nota">⚠️ Não consegui carregar o áudio (pode ter sido removido).</span>'; };
+    const dl=document.createElement('a'); dl.className='dl'; dl.href=data.signedUrl; dl.textContent='⬇ Baixar'; dl.setAttribute('download','');
+    bar.appendChild(audio); bar.appendChild(dl);
+  }catch(e){
+    btn.disabled=false; btn.textContent='🔊 Ouvir gravação';
+    document.getElementById('audioBar').insertAdjacentHTML('beforeend','<span class="nota">⚠️ Gravação indisponível ('+((e&&e.message)||'erro')+').</span>');
+  }
 }
 function renderTranscricao(c){
   const dlg=(c.transcript_dialogo||'').trim();
