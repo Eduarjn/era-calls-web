@@ -177,9 +177,8 @@
       <button class="vtab" id="nav-trend" onclick="view('trend')">📊 Tendências</button>
       <button class="vtab" id="nav-busca" onclick="view('busca')">🔎 Buscar</button>
       <button class="vtab" id="nav-mkt" onclick="view('mkt')">📣 Marketing</button>
-      <button class="vtab" id="nav-vend" onclick="view('vend')">👥 Vendedores</button>
       <button class="vtab" id="nav-rel" onclick="view('rel')">📈 Relatórios</button>
-      <button class="vtab hidden" id="nav-usuarios" onclick="view('usuarios')">👤 Usuários</button>
+      <button class="vtab" id="nav-usuarios" onclick="view('usuarios')">👥 Usuários</button>
     </div>
 
     <section id="view-calls">
@@ -231,11 +230,6 @@
       <div id="mktContent"></div>
     </section>
 
-    <section id="view-vend" class="hidden">
-      <h2 style="font-size:22px;margin-bottom:18px">Panorama por vendedor</h2>
-      <div class="grid" id="vendContent"></div>
-    </section>
-
     <section id="view-rel" class="hidden">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px">
         <h2 style="font-size:22px">Relatórios · Rastreabilidade</h2>
@@ -260,7 +254,11 @@
     </section>
 
     <section id="view-usuarios" class="hidden">
-      <h2 style="font-size:22px;margin-bottom:14px">Usuários · Acesso</h2>
+      <h2 style="font-size:22px;margin-bottom:16px">Usuários</h2>
+      <h3 style="font-size:18px;margin-bottom:12px">📊 Panorama por vendedor</h3>
+      <div class="grid" id="vendContent" style="margin-bottom:26px"></div>
+      <div id="gestorPanel" class="hidden">
+      <h3 style="font-size:18px;margin:6px 0 12px">🔑 Acesso</h3>
       <div class="panel" style="max-width:520px">
         <h3>➕ Criar novo usuário</h3>
         <label>Nome</label><input id="uNome" placeholder="Nome da pessoa">
@@ -276,6 +274,7 @@
         <div id="uMsg" style="margin-top:12px;font-size:14px"></div>
       </div>
       <div class="panel"><h3>👥 Usuários da empresa</h3><div id="uLista"></div></div>
+      </div>
     </section>
   </main>
 </div>
@@ -360,14 +359,13 @@ function toggleTema(){
   aplicarTema(t); })();
 
 function view(v){
-  ['calls','trend','busca','mkt','vend','rel','usuarios'].forEach(x=>{
+  ['calls','trend','busca','mkt','rel','usuarios'].forEach(x=>{
     document.getElementById('view-'+x).classList.toggle('hidden',x!==v);
     document.getElementById('nav-'+x).classList.toggle('active',x===v);
   });
   if(v==='trend') renderTrend();
   if(v==='busca') renderBusca();
   if(v==='mkt') renderMkt();
-  if(v==='vend') renderVend();
   if(v==='rel') renderRelatorios();
   if(v==='usuarios') renderUsuarios();
 }
@@ -428,7 +426,6 @@ async function carregar(){
   ]);
   CALLS=calls||[]; PERFIS={}; (perfis||[]).forEach(p=>PERFIS[p.id]={nome:p.nome,email:p.email,papel:p.papel});
   MEU = USER ? PERFIS[USER.id] : null;
-  document.getElementById('nav-usuarios').classList.toggle('hidden', !(MEU && MEU.papel==='gestor'));
   render();
 }
 function setPeriodo(p){ PERIODO=p; document.querySelectorAll('.per').forEach(b=>b.classList.toggle('active',b.dataset.p===p)); render(); }
@@ -826,6 +823,8 @@ async function criarUsuario(){
   carregar();
 }
 function renderUsuarios(){
+  renderVend();
+  document.getElementById('gestorPanel').classList.toggle('hidden', !(MEU && MEU.papel==='gestor'));
   const arr=Object.values(PERFIS).sort((a,b)=>(a.nome||'').localeCompare(b.nome||''));
   document.getElementById('uLista').innerHTML = arr.length
     ? `<div style="overflow:auto"><table class="tbl"><thead><tr><th>Nome</th><th>E-mail</th><th>Papel</th></tr></thead><tbody>${arr.map(u=>`<tr><td>${esc(u.nome||'—')}</td><td>${esc(u.email||'—')}</td><td>${esc(u.papel||'—')}</td></tr>`).join('')}</tbody></table></div>`
