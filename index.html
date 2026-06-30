@@ -832,8 +832,24 @@ async function ouvirGravacao(btn,path){
     document.getElementById('audioBar').insertAdjacentHTML('beforeend','<span class="nota">⚠️ Gravação indisponível ('+((e&&e.message)||'erro')+').</span>');
   }
 }
+function txtDaCall(c){
+  const dlg=(c.transcript_dialogo||'').trim();
+  const corpo=dlg || (c.transcript||'').trim() || '(sem transcrição)';
+  let cab='CLIENTE: '+(c.cliente||'—')+'\n';
+  cab+='DATA: '+new Date(c.data_call).toLocaleString('pt-BR')+'\n';
+  if(segOf(c)) cab+='SEGMENTO: '+segOf(c)+'\n';
+  cab+='\n'+'='.repeat(44)+'\n\n';
+  return cab+corpo+'\n';
+}
+function baixarTxt(id){
+  const c=CALLS.find(x=>x.id===id); if(!c) return;
+  const blob=new Blob(['﻿'+txtDaCall(c)],{type:'text/plain;charset=utf-8'});
+  const nome=((c.cliente||'call')+'_'+new Date(c.data_call).toISOString().slice(0,10)).replace(/[^\w.\-]+/g,'_');
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=nome+'.txt'; a.click(); URL.revokeObjectURL(a.href);
+}
 function renderTranscricao(c){
   const dlg=(c.transcript_dialogo||'').trim();
+  const dlBtn=(c.transcript||dlg)?'<button class="btn btn-ghost" onclick="baixarTxt(\''+c.id+'\')" style="font-size:13px;padding:8px 14px">⬇ Baixar .txt</button>':'';
   if(dlg){
     const linhas=dlg.split(/\r?\n/).filter(l=>l.trim());
     const html=linhas.map(l=>{
@@ -842,11 +858,12 @@ function renderTranscricao(c){
         return '<p class="turno"><span class="quem">'+esc(quem)+':</span>'+esc(fala)+'</p>'; }
       return '<p class="turno">'+esc(l)+'</p>';
     }).join('');
-    return '<div class="dialogo">'+html+'</div>';
+    return '<div style="display:flex;justify-content:flex-end;margin-bottom:10px">'+dlBtn+'</div><div class="dialogo">'+html+'</div>';
   }
   if(!c.transcript){ return '<div class="transcript">—</div>'; }
   // Sem diálogo ainda (ex.: call longa): oferece separar falas sob demanda.
-  return '<div style="display:flex;justify-content:flex-end;margin-bottom:10px">'
+  return '<div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:10px">'
+    + dlBtn
     + '<button class="btn btn-ghost" id="btnDiar" onclick="diarizarCall(\''+c.id+'\')" style="font-size:13px;padding:8px 14px">🗣️ Separar falas (Nome: fala)</button></div>'
     + '<div id="diarStatus" style="font-size:13px;color:var(--muted);margin-bottom:8px"></div>'
     + '<div class="transcript">'+esc(c.transcript)+'</div>';
