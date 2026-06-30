@@ -173,6 +173,7 @@
   <main>
     <div class="viewnav">
       <button class="vtab active" id="nav-calls" onclick="view('calls')">📞 Calls</button>
+      <button class="vtab" id="nav-trend" onclick="view('trend')">📊 Tendências</button>
       <button class="vtab" id="nav-mkt" onclick="view('mkt')">📣 Marketing</button>
       <button class="vtab" id="nav-vend" onclick="view('vend')">👥 Vendedores</button>
       <button class="vtab" id="nav-rel" onclick="view('rel')">📈 Relatórios</button>
@@ -201,6 +202,17 @@
       <div class="empty hidden" id="empty">Nenhuma call ainda. Envie um áudio acima para começar.</div>
     </section>
 
+    <section id="view-trend" class="hidden">
+      <h2 style="font-size:22px;margin-bottom:6px">Tendências</h2>
+      <p style="color:var(--muted);font-size:13px;margin-bottom:16px">O que mais se repete nas calls e o que costuma travar o fechamento. Marque Ganho/Perdido no detalhe de cada call para alimentar o win/loss.</p>
+      <div class="periodos" id="trendPer">
+        <button class="per" data-tp="30d" onclick="setTrendPer('30d')">30 dias</button>
+        <button class="per" data-tp="90d" onclick="setTrendPer('90d')">90 dias</button>
+        <button class="per active" data-tp="tudo" onclick="setTrendPer('tudo')">Tudo</button>
+      </div>
+      <div id="trendContent"></div>
+    </section>
+
     <section id="view-mkt" class="hidden">
       <h2 style="font-size:22px;margin-bottom:6px">Inteligência de Marketing</h2>
       <p style="color:var(--muted);font-size:13px;margin-bottom:16px">O que mais aparece nas calls — base para anúncios, disparos e conteúdo.</p>
@@ -217,14 +229,21 @@
     <section id="view-rel" class="hidden">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px">
         <h2 style="font-size:22px">Relatórios · Rastreabilidade</h2>
-        <button class="btn btn-soft" onclick="exportarCSV()">⬇ Exportar CSV</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-soft" id="btnBackfill" onclick="reanalisarSemSegmento()" title="Re-roda a IA nas calls que ainda não têm segmento">🏷️ Preencher segmentos</button>
+          <button class="btn btn-soft" onclick="exportarCSV()">⬇ Exportar CSV</button>
+        </div>
       </div>
       <div class="filtros">
-        <input id="relBusca" placeholder="🔎 Buscar por cliente ou participante" oninput="renderRelatorios()">
+        <input id="relBusca" placeholder="🔎 Buscar por cliente, segmento ou participante" oninput="renderRelatorios()">
+        <select id="relSeg" onchange="renderRelatorios()" style="width:auto;padding:9px 12px;border-radius:11px;border:1px solid var(--line);background:var(--bg2);color:var(--navy);font-size:14px;font-family:'Inter'">
+          <option value="">🏷️ Todos os segmentos</option>
+        </select>
         <label>De <input type="date" id="relDe" onchange="renderRelatorios()"></label>
         <label>Até <input type="date" id="relAte" onchange="renderRelatorios()"></label>
         <button class="btn btn-soft" onclick="limparFiltroRel()">Limpar</button>
       </div>
+      <div id="backfillMsg" style="font-size:13px;color:var(--muted);margin-bottom:10px"></div>
       <div id="relCharts"></div>
       <div id="relTable"></div>
     </section>
@@ -329,10 +348,11 @@ function toggleTema(){
   aplicarTema(t); })();
 
 function view(v){
-  ['calls','mkt','vend','rel','usuarios'].forEach(x=>{
+  ['calls','trend','mkt','vend','rel','usuarios'].forEach(x=>{
     document.getElementById('view-'+x).classList.toggle('hidden',x!==v);
     document.getElementById('nav-'+x).classList.toggle('active',x===v);
   });
+  if(v==='trend') renderTrend();
   if(v==='mkt') renderMkt();
   if(v==='vend') renderVend();
   if(v==='rel') renderRelatorios();
@@ -418,7 +438,7 @@ function cardEl(c,i){
   const d=document.createElement('div'); d.className='call'; d.style.animationDelay=(i*.04)+'s'; d.onclick=()=>abrir(c.id);
   d.innerHTML=`<div class="name">${esc(c.cliente||'Cliente não identificado')}</div>
     <div class="meta">${new Date(c.data_call).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</div>
-    <div class="badges"><span class="badge ${cls}">${esc(c.sentimento||'—')}</span><span class="badge b-score">Score ${c.score_oportunidade??'—'}</span></div>
+    <div class="badges"><span class="badge ${cls}">${esc(c.sentimento||'—')}</span><span class="badge b-score">Score ${c.score_oportunidade??'—'}</span>${c.resultado==='ganho'?'<span class="badge b-pos">✅ Ganho</span>':c.resultado==='perdido'?'<span class="badge b-neg">❌ Perdido</span>':''}</div>
     <div class="cardacts" onclick="event.stopPropagation()">
       <button onclick="renomearId('${c.id}')" title="Renomear">✏️ Renomear</button>
       <button onclick="excluirCall('${c.id}')" title="Excluir">🗑️</button>
@@ -485,6 +505,61 @@ async function gerarInsights(){
   }catch(e){ box.innerHTML='<div class="panel" style="color:var(--red)">Erro: '+esc(e.message||e)+'</div>'; }
 }
 
+let TREND_PER='tudo';
+function setTrendPer(p){ TREND_PER=p; document.querySelectorAll('#trendPer .per').forEach(b=>b.classList.toggle('active',b.dataset.tp===p)); renderTrend(); }
+function trendFiltradas(){
+  if(TREND_PER==='tudo') return CALLS.slice();
+  const dias=TREND_PER==='90d'?90:30, lim=new Date(Date.now()-dias*86400000);
+  return CALLS.filter(c=>new Date(c.data_call)>=lim);
+}
+function tallyArr(arr,key){
+  const m={};
+  arr.forEach(c=>((c.analise&&c.analise[key])||[]).forEach(it=>{const k=(''+it).trim();if(k)m[k]=(m[k]||0)+1;}));
+  return Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,10);
+}
+// objeções por categoria fixa (temas_objecao); calls antigas caem no texto cru de objecoes
+function tallyObjecoes(arr){ const t=tallyArr(arr,'temas_objecao'); return t.length?t:tallyArr(arr,'objecoes'); }
+// contagem de um campo ESCALAR (string) por call, ex.: segmento
+function tallyField(arr,getter){ const m={}; arr.forEach(c=>{const k=(getter(c)||'').trim(); if(k)m[k]=(m[k]||0)+1;}); return Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,10); }
+function temasDaCall(c){ const a=c.analise||{}; const t=(a.temas_objecao&&a.temas_objecao.length)?a.temas_objecao:(a.objecoes||[]); return t.map(x=>(''+x).trim()).filter(Boolean); }
+function renderTrend(){
+  const F=trendFiltradas();
+  if(!F.length){ document.getElementById('trendContent').innerHTML='<div class="panel" style="color:var(--muted)">Sem calls no período. Envie algumas calls para ver as tendências.</div>'; return; }
+  // Win/loss
+  const res={ganho:0,perdido:0,andamento:0}; F.forEach(c=>{ const r=c.resultado||'andamento'; if(res[r]!=null)res[r]++; });
+  const decididas=res.ganho+res.perdido;
+  const taxa=decididas?Math.round(res.ganho/decididas*100):0;
+  const pieRes=pieSVG([{label:'Ganho',value:res.ganho,color:'#417B5A'},{label:'Perdido',value:res.perdido,color:'#C0392B'},{label:'Em andamento',value:res.andamento,color:'#7A5840'}]);
+  // Win/loss por objeção: entre as calls JÁ decididas, qual objeção mais aparece em perdas
+  const dec=F.filter(c=>c.resultado==='ganho'||c.resultado==='perdido');
+  const porObj={};
+  dec.forEach(c=>{ const perdeu=c.resultado==='perdido'; temasDaCall(c).forEach(t=>{ if(!porObj[t])porObj[t]={tot:0,perd:0}; porObj[t].tot++; if(perdeu)porObj[t].perd++; }); });
+  const objRows=Object.entries(porObj).map(([t,v])=>({t,tot:v.tot,perd:v.perd,pct:Math.round(v.perd/v.tot*100)}))
+    .sort((a,b)=>b.perd-a.perd||b.tot-a.tot).slice(0,8);
+  const objTable= objRows.length
+    ? `<div style="overflow:auto"><table class="tbl"><thead><tr><th>Objeção</th><th style="text-align:center">Em calls decididas</th><th style="text-align:center">Perdas</th><th style="text-align:center">% de perda</th></tr></thead><tbody>`
+      + objRows.map(r=>`<tr><td>${esc(r.t)}</td><td style="text-align:center">${r.tot}</td><td style="text-align:center">${r.perd}</td><td style="text-align:center"><b style="color:${r.pct>=50?'var(--red)':'var(--muted)'}">${r.pct}%</b></td></tr>`).join('')
+      + `</tbody></table></div>`
+    : '<p style="color:var(--muted)">Marque calls como Ganho/Perdido no detalhe para cruzar objeções com perdas.</p>';
+  document.getElementById('trendContent').innerHTML=`
+    <div class="stats">
+      <div class="stat"><div class="n">${F.length}</div><div class="l">Calls no período</div></div>
+      <div class="stat"><div class="n" style="color:var(--green)">${res.ganho}</div><div class="l">Ganhas</div></div>
+      <div class="stat"><div class="n" style="color:var(--red)">${res.perdido}</div><div class="l">Perdidas</div></div>
+      <div class="stat"><div class="n" style="color:var(--accent)">${taxa}%</div><div class="l">Taxa de ganho${decididas?'':' (—)'}</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:16px">
+      <div class="panel"><h3>🧱 Objeções mais comuns</h3>${barras(tallyObjecoes(F))}</div>
+      <div class="panel"><h3>🆚 Concorrentes mais citados</h3>${barras(tallyArr(F,'concorrentes_citados'))}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:16px">
+      <div class="panel"><h3>🩺 Dores recorrentes</h3>${barras(tallyArr(F,'dores'))}</div>
+      <div class="panel"><h3>🏆 Resultado (win/loss)</h3>${pieRes}</div>
+    </div>
+    <div class="panel"><h3>🏷️ Segmentos atendidos</h3>${barras(tallyField(F,segOf))}</div>
+    <div class="panel"><h3>📉 Objeções que mais aparecem em perdas</h3>${objTable}</div>`;
+}
+
 function renderVend(){
   const by={}; CALLS.forEach(c=>{(by[c.user_id]=by[c.user_id]||[]).push(c);});
   const el=document.getElementById('vendContent'); el.innerHTML='';
@@ -509,6 +584,58 @@ async function toggleP(id,nome){
   if(error){ alert('Erro ao salvar participante: '+error.message); return; }
   c.participantes=arr; abrir(id);
 }
+function segOf(c){ return (c.segmento||(c.analise&&c.analise.segmento)||'').toString().trim(); }
+async function reanalisarCall(id,btn){
+  const c=CALLS.find(x=>x.id===id); if(!c) return;
+  const txt0=btn?btn.textContent:''; if(btn){ btn.disabled=true; btn.textContent='Reanalisando…'; }
+  try{
+    const {data,error}=await sb.functions.invoke(FUNC,{body:{action:'reanalisar',call_id:id}});
+    if(error){ let m=error.message; try{const cx=await error.context.json();m=cx.error||m}catch(_){ } throw new Error(m); }
+    if(data&&data.error) throw new Error(data.error);
+    const a=data.analise||{};
+    c.analise=a; c.resumo=a.resumo??c.resumo; c.sentimento=a.sentimento??null;
+    c.score_oportunidade=a.score_oportunidade??null; c.segmento=a.segmento??null;
+    if(CUR&&CUR.id===id) CUR=c;
+    abrir(id); render();
+  }catch(e){ alert('Erro ao reanalisar: '+(e.message||e)); if(btn){ btn.disabled=false; btn.textContent=txt0; } }
+}
+async function reanalisarSemSegmento(){
+  const btn=document.getElementById('btnBackfill'), msg=document.getElementById('backfillMsg');
+  const pendentes=CALLS.filter(c=>!segOf(c) && (c.transcript||'').trim());
+  if(!pendentes.length){ if(msg) msg.textContent='Todas as calls com transcrição já têm segmento. ✓'; return; }
+  if(!confirm('Reanalisar '+pendentes.length+' call(s) sem segmento?\n\nPode levar alguns minutos e usa o limite gratuito do Groq (uma de cada vez).')) return;
+  if(btn) btn.disabled=true;
+  let ok=0, fail=0;
+  for(let i=0;i<pendentes.length;i++){
+    const c=pendentes[i];
+    if(msg) msg.textContent='Reanalisando '+(i+1)+'/'+pendentes.length+'…  ('+ok+' ok'+(fail?', '+fail+' falha(s)':'')+')';
+    try{
+      const {data,error}=await sb.functions.invoke(FUNC,{body:{action:'reanalisar',call_id:c.id}});
+      if(error){ let m=error.message; try{const cx=await error.context.json();m=cx.error||m}catch(_){ } throw new Error(m); }
+      if(data&&data.error) throw new Error(data.error);
+      const a=data.analise||{};
+      c.analise=a; c.resumo=a.resumo??c.resumo; c.sentimento=a.sentimento??null; c.score_oportunidade=a.score_oportunidade??null; c.segmento=a.segmento??null;
+      ok++;
+    }catch(e){ fail++; }
+    renderRelatorios();
+  }
+  if(msg) msg.textContent='Concluído: '+ok+' reanalisada(s)'+(fail?', '+fail+' falha(s) — tente de novo mais tarde (limite do Groq)':'')+'.';
+  if(btn) btn.disabled=false;
+  render();
+}
+const RESULTADOS=[['ganho','✅ Ganho'],['perdido','❌ Perdido'],['andamento','⏳ Em andamento']];
+function resultadoChips(c){
+  const atual=c.resultado||'andamento';
+  return RESULTADOS.map(([v,lbl])=>`<span class="chip ${atual===v?'on':''}" onclick="setResultado('${c.id}','${v}')">${lbl}</span>`).join('');
+}
+async function setResultado(id,v){
+  const c=CALLS.find(x=>x.id===id); if(!c) return;
+  const antigo=c.resultado; c.resultado=v;
+  const box=document.getElementById('resChips'); if(box) box.innerHTML=resultadoChips(c);
+  const {error}=await sb.from('calls').update({resultado:v}).eq('id',id);
+  if(error){ c.resultado=antigo; if(box) box.innerHTML=resultadoChips(c); alert('Erro ao salvar resultado: '+error.message); return; }
+  if(CUR&&CUR.id===id) CUR.resultado=v;
+}
 async function renomearId(id){
   const c=CALLS.find(x=>x.id===id); if(!c) return;
   const novo=prompt('Novo nome da call (cliente):', c.cliente||'');
@@ -532,14 +659,23 @@ async function excluirCall(id){
 }
 function relFiltradas(){
   const q=(document.getElementById('relBusca')?.value||'').toLowerCase().trim();
+  const seg=document.getElementById('relSeg')?.value||'';
   const de=document.getElementById('relDe')?.value, ate=document.getElementById('relAte')?.value;
   return CALLS.filter(c=>{
     const d=new Date(c.data_call);
     if(de && d < new Date(de+'T00:00:00')) return false;
     if(ate && d > new Date(ate+'T23:59:59')) return false;
-    if(q){ const hay=((c.cliente||'')+' '+((Array.isArray(c.participantes)?c.participantes:[]).join(' '))).toLowerCase(); if(!hay.includes(q)) return false; }
+    if(seg && segOf(c)!==seg) return false;
+    if(q){ const hay=((c.cliente||'')+' '+segOf(c)+' '+((Array.isArray(c.participantes)?c.participantes:[]).join(' '))).toLowerCase(); if(!hay.includes(q)) return false; }
     return true;
   });
+}
+function popularFiltroSeg(){
+  const sel=document.getElementById('relSeg'); if(!sel) return;
+  const atual=sel.value;
+  const segs=[...new Set(CALLS.map(segOf).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  sel.innerHTML='<option value="">🏷️ Todos os segmentos</option>'+segs.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join('');
+  if(segs.includes(atual)) sel.value=atual;
 }
 function pieSVG(data){
   data=data.filter(d=>d.value>0); const total=data.reduce((s,d)=>s+d.value,0);
@@ -554,6 +690,7 @@ function pieSVG(data){
   return `<div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap"><svg class="pie" width="144" height="144" viewBox="0 0 144 144">${paths}</svg><div style="flex:1;min-width:150px">${leg}</div></div>`;
 }
 function renderRelatorios(){
+  popularFiltroSeg();
   const F=relFiltradas();
   const sent={positivo:0,neutro:0,negativo:0}; F.forEach(c=>{ if(c.sentimento&&sent[c.sentimento]!=null)sent[c.sentimento]++; });
   const pieSent=pieSVG([{label:'Positivo',value:sent.positivo,color:'#417B5A'},{label:'Neutro',value:sent.neutro,color:'#7A5840'},{label:'Negativo',value:sent.negativo,color:'#C0392B'}]);
@@ -570,15 +707,15 @@ function renderRelatorios(){
       <div class="panel"><h3>🥧 Participação por pessoa</h3>${piePart}</div>
     </div>
     <div class="panel"><h3>📊 Calls e score por pessoa</h3>${bars}</div>`;
-  const rows=F.map(c=>`<tr><td>${new Date(c.data_call).toLocaleString('pt-BR')}</td><td>${esc(c.cliente||'—')}</td><td>${esc((Array.isArray(c.participantes)?c.participantes:[]).join(', ')||'—')}</td><td>${esc(c.sentimento||'—')}</td><td style="text-align:center">${c.score_oportunidade??'—'}</td></tr>`).join('');
+  const rows=F.map(c=>`<tr><td>${new Date(c.data_call).toLocaleString('pt-BR')}</td><td>${esc(c.cliente||'—')}</td><td>${esc(segOf(c)||'—')}</td><td>${esc((Array.isArray(c.participantes)?c.participantes:[]).join(', ')||'—')}</td><td>${esc(c.sentimento||'—')}</td><td style="text-align:center">${c.score_oportunidade??'—'}</td></tr>`).join('');
   document.getElementById('relTable').innerHTML=`<div class="panel"><h3>🧾 Rastreabilidade (${F.length} call${F.length===1?'':'s'})</h3>
-    <div style="overflow:auto"><table class="tbl"><thead><tr><th>Data</th><th>Cliente</th><th>Participantes</th><th>Sentimento</th><th>Score</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+    <div style="overflow:auto"><table class="tbl"><thead><tr><th>Data</th><th>Cliente</th><th>Segmento</th><th>Participantes</th><th>Sentimento</th><th>Score</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
 }
-function limparFiltroRel(){ ['relBusca','relDe','relAte'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';}); renderRelatorios(); }
+function limparFiltroRel(){ ['relBusca','relDe','relAte','relSeg'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';}); renderRelatorios(); }
 function exportarCSV(){
   const F=relFiltradas();
-  const head=['Data','Cliente','Participantes','Sentimento','Score'];
-  const linhas=F.map(c=>[new Date(c.data_call).toLocaleString('pt-BR'), c.cliente||'', (Array.isArray(c.participantes)?c.participantes:[]).join('; '), c.sentimento||'', c.score_oportunidade??'']);
+  const head=['Data','Cliente','Segmento','Participantes','Sentimento','Score'];
+  const linhas=F.map(c=>[new Date(c.data_call).toLocaleString('pt-BR'), c.cliente||'', segOf(c)||'', (Array.isArray(c.participantes)?c.participantes:[]).join('; '), c.sentimento||'', c.score_oportunidade??'']);
   const csv=[head,...linhas].map(r=>r.map(x=>'"'+(''+x).replace(/"/g,'""')+'"').join(',')).join('\n');
   const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='relatorio_calls.csv'; a.click(); URL.revokeObjectURL(a.href);
@@ -607,7 +744,7 @@ function renderUsuarios(){
 function abrir(id){
   const c=CALLS.find(x=>x.id===id); if(!c)return; CUR=c;
   document.getElementById('detTitle').textContent=c.cliente||'Cliente não identificado';
-  document.getElementById('detSub').textContent=new Date(c.data_call).toLocaleString('pt-BR');
+  document.getElementById('detSub').textContent=new Date(c.data_call).toLocaleString('pt-BR')+(segOf(c)?('  ·  🏷️ '+segOf(c)):'');
   const a=c.analise||{};
   const part=Array.isArray(c.participantes)?c.participantes:[];
   const card=(ic,t,arr)=>(arr&&arr.length)?`<div class="rcard"><h3>${ic} ${t}</h3>${lista(arr)}</div>`:'';
@@ -619,8 +756,12 @@ function abrir(id){
       <div><b>Prazo</b><span>${esc(q.prazo||'—')}</span></div></div></div>`:'';
   document.getElementById('paneA').innerHTML=`
     <div class="rcard"><div class="rcard-head"><h3 style="margin:0">👥 Quem participou</h3>
-      <button class="btn-audio" onclick="copiarHandoff('${c.id}',this)">📋 Copiar para CRM</button></div>
+      <span style="display:flex;gap:6px">
+        <button class="btn-audio" onclick="reanalisarCall('${c.id}',this)" title="Re-roda a IA sobre a transcrição (atualiza segmento e a análise)">🔄 Reanalisar</button>
+        <button class="btn-audio" onclick="copiarHandoff('${c.id}',this)">📋 Copiar para CRM</button></span></div>
       <div class="chips">${PARTICIPANTES.map(p=>`<span class="chip ${part.includes(p)?'on':''}" onclick="toggleP('${c.id}','${p}')">${esc(p)}</span>`).join('')}</div></div>
+    <div class="rcard"><h3>🏆 Resultado da oportunidade</h3>
+      <div class="chips" id="resChips">${resultadoChips(c)}</div></div>
     <div class="rcard"><h3>📌 Resumo</h3><p>${esc(c.resumo||a.resumo||'—')}</p></div>
     ${qHtml}
     ${card('👥','Stakeholders / decisores',a.stakeholders)}
