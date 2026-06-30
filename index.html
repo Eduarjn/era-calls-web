@@ -175,7 +175,6 @@
     <div class="viewnav">
       <button class="vtab active" id="nav-calls" onclick="view('calls')">📞 Calls</button>
       <button class="vtab" id="nav-trend" onclick="view('trend')">📊 Tendências</button>
-      <button class="vtab" id="nav-busca" onclick="view('busca')">🔎 Buscar</button>
       <button class="vtab" id="nav-mkt" onclick="view('mkt')">📣 Marketing</button>
       <button class="vtab" id="nav-rel" onclick="view('rel')">📈 Relatórios</button>
       <button class="vtab" id="nav-usuarios" onclick="view('usuarios')">👥 Usuários</button>
@@ -214,14 +213,6 @@
       <div id="trendContent"></div>
     </section>
 
-    <section id="view-busca" class="hidden">
-      <h2 style="font-size:22px;margin-bottom:6px">Buscar nas calls</h2>
-      <p style="color:var(--muted);font-size:13px;margin-bottom:14px">Procure um concorrente, objeção, termo dito na call, cliente ou segmento. A busca olha dentro das transcrições e das análises de todas as calls.</p>
-      <input id="buscaInput" placeholder="🔎 Ex.: 3CX, preço, integração, WhatsApp…" oninput="buscar()">
-      <div id="buscaSug" class="chips" style="margin:12px 0"></div>
-      <div id="buscaRes"></div>
-    </section>
-
     <section id="view-mkt" class="hidden">
       <h2 style="font-size:22px;margin-bottom:6px">Inteligência de Marketing</h2>
       <p style="color:var(--muted);font-size:13px;margin-bottom:16px">O que mais aparece nas calls — base para anúncios, disparos e conteúdo.</p>
@@ -239,8 +230,16 @@
           <button class="btn btn-soft" onclick="exportarCSV()">⬇ Exportar CSV</button>
         </div>
       </div>
+      <div class="panel">
+        <h3>🔎 Buscar dentro das calls</h3>
+        <p style="color:var(--muted);font-size:13px;margin:-4px 0 12px">Procure um concorrente, objeção, termo dito na call, cliente ou segmento — olha dentro das transcrições e das análises de todas as calls.</p>
+        <input id="buscaInput" placeholder="🔎 Ex.: 3CX, preço, integração, WhatsApp…" oninput="buscar()">
+        <div id="buscaSug" class="chips" style="margin:12px 0"></div>
+        <div id="buscaRes"></div>
+      </div>
+      <h3 style="font-size:18px;margin:6px 0 12px">🧾 Rastreabilidade</h3>
       <div class="filtros">
-        <input id="relBusca" placeholder="🔎 Buscar por cliente, segmento ou participante" oninput="renderRelatorios()">
+        <input id="relBusca" placeholder="🔎 Filtrar a tabela por cliente, segmento ou participante" oninput="renderRelatorios()">
         <select id="relSeg" onchange="renderRelatorios()" style="width:auto;padding:9px 12px;border-radius:11px;border:1px solid var(--line);background:var(--bg2);color:var(--navy);font-size:14px;font-family:'Inter'">
           <option value="">🏷️ Todos os segmentos</option>
         </select>
@@ -359,14 +358,13 @@ function toggleTema(){
   aplicarTema(t); })();
 
 function view(v){
-  ['calls','trend','busca','mkt','rel','usuarios'].forEach(x=>{
+  ['calls','trend','mkt','rel','usuarios'].forEach(x=>{
     document.getElementById('view-'+x).classList.toggle('hidden',x!==v);
     document.getElementById('nav-'+x).classList.toggle('active',x===v);
   });
   if(v==='trend') renderTrend();
-  if(v==='busca') renderBusca();
   if(v==='mkt') renderMkt();
-  if(v==='rel') renderRelatorios();
+  if(v==='rel'){ renderRelatorios(); renderBusca(); }
   if(v==='usuarios') renderUsuarios();
 }
 
