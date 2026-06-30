@@ -231,6 +231,7 @@
         <h2 style="font-size:22px">Relatórios · Rastreabilidade</h2>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn btn-soft" id="btnBackfill" onclick="reanalisarSemSegmento()" title="Re-roda a IA nas calls que ainda não têm segmento">🏷️ Preencher segmentos</button>
+          <button class="btn btn-soft" onclick="baixarTranscricoesZip()" title="Baixa as transcrições selecionadas em .txt (zip). Sem seleção = todas as filtradas">⬇ Transcrições (.zip)</button>
           <button class="btn btn-soft" onclick="exportarCSV()">⬇ Exportar CSV</button>
         </div>
       </div>
@@ -287,6 +288,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <script>
 const SUPABASE_URL = "https://lhncmqqnyxqkxfhiafaz.supabase.co";
 const SUPABASE_KEY = "sb_publishable_9zXFMPKbxrrDM8t5ecjY5Q_p4wCipFB";
@@ -707,9 +709,9 @@ function renderRelatorios(){
       <div class="panel"><h3>🥧 Participação por pessoa</h3>${piePart}</div>
     </div>
     <div class="panel"><h3>📊 Calls e score por pessoa</h3>${bars}</div>`;
-  const rows=F.map(c=>`<tr><td>${new Date(c.data_call).toLocaleString('pt-BR')}</td><td>${esc(c.cliente||'—')}</td><td>${esc(segOf(c)||'—')}</td><td>${esc((Array.isArray(c.participantes)?c.participantes:[]).join(', ')||'—')}</td><td>${esc(c.sentimento||'—')}</td><td style="text-align:center">${c.score_oportunidade??'—'}</td></tr>`).join('');
+  const rows=F.map(c=>`<tr><td style="text-align:center"><input type="checkbox" class="relChk" data-id="${c.id}" style="width:auto;margin:0"></td><td>${new Date(c.data_call).toLocaleString('pt-BR')}</td><td>${esc(c.cliente||'—')}</td><td>${esc(segOf(c)||'—')}</td><td>${esc((Array.isArray(c.participantes)?c.participantes:[]).join(', ')||'—')}</td><td>${esc(c.sentimento||'—')}</td><td style="text-align:center">${c.score_oportunidade??'—'}</td></tr>`).join('');
   document.getElementById('relTable').innerHTML=`<div class="panel"><h3>🧾 Rastreabilidade (${F.length} call${F.length===1?'':'s'})</h3>
-    <div style="overflow:auto"><table class="tbl"><thead><tr><th>Data</th><th>Cliente</th><th>Segmento</th><th>Participantes</th><th>Sentimento</th><th>Score</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+    <div style="overflow:auto"><table class="tbl"><thead><tr><th style="width:34px;text-align:center"><input type="checkbox" id="relAll" onchange="toggleAllRel(this.checked)" title="Selecionar todas" style="width:auto;margin:0"></th><th>Data</th><th>Cliente</th><th>Segmento</th><th>Participantes</th><th>Sentimento</th><th>Score</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
 }
 function limparFiltroRel(){ ['relBusca','relDe','relAte','relSeg'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';}); renderRelatorios(); }
 function exportarCSV(){
@@ -719,6 +721,24 @@ function exportarCSV(){
   const csv=[head,...linhas].map(r=>r.map(x=>'"'+(''+x).replace(/"/g,'""')+'"').join(',')).join('\n');
   const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='relatorio_calls.csv'; a.click(); URL.revokeObjectURL(a.href);
+}
+function toggleAllRel(on){ document.querySelectorAll('.relChk').forEach(x=>x.checked=on); }
+async function baixarTranscricoesZip(){
+  if(typeof JSZip==='undefined'){ alert('A biblioteca de zip ainda está carregando — tente de novo em alguns segundos.'); return; }
+  const marcadas=[...document.querySelectorAll('.relChk:checked')].map(x=>x.dataset.id);
+  const alvo = marcadas.length ? CALLS.filter(c=>marcadas.includes(c.id)) : relFiltradas();
+  const comTexto = alvo.filter(c=>(c.transcript||c.transcript_dialogo||'').trim());
+  if(!comTexto.length){ alert(marcadas.length?'As calls marcadas não têm transcrição.':'Nenhuma transcrição nas calls filtradas.'); return; }
+  if(!marcadas.length && !confirm('Nenhuma marcada — baixar as '+comTexto.length+' transcrição(ões) filtrada(s)?')) return;
+  const zip=new JSZip(); const usados={};
+  comTexto.forEach(c=>{
+    let base=((c.cliente||'call')+'_'+new Date(c.data_call).toISOString().slice(0,10)).replace(/[^\w.\-]+/g,'_');
+    usados[base]=(usados[base]||0)+1; if(usados[base]>1) base+='_'+usados[base];
+    zip.file(base+'.txt', txtDaCall(c));
+  });
+  const blob=await zip.generateAsync({type:'blob'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='transcricoes_'+new Date().toISOString().slice(0,10)+'.zip'; a.click(); URL.revokeObjectURL(a.href);
 }
 async function criarUsuario(){
   const nome=document.getElementById('uNome').value.trim();
