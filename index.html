@@ -71,6 +71,7 @@
   .badge{font-size:11px;font-weight:700;padding:5px 10px;border-radius:999px}
   .b-pos{background:rgba(65,123,90,.14);color:#2A6045} .b-neu{background:rgba(122,88,64,.14);color:#7A5840} .b-neg{background:rgba(192,57,43,.12);color:#C0392B}
   .b-score{background:rgba(75,63,114,.12);color:#4B3F72}
+  mark{background:var(--beige);color:var(--navy);border-radius:3px;padding:0 2px;font-weight:600}
   .periodos{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
   .per{padding:7px 15px;border-radius:999px;background:var(--soft);border:1px solid var(--line);color:var(--muted);cursor:pointer;font-weight:600;font-size:13px}
   .per.active{background:var(--accent);color:#fff;border-color:transparent}
@@ -174,6 +175,7 @@
     <div class="viewnav">
       <button class="vtab active" id="nav-calls" onclick="view('calls')">📞 Calls</button>
       <button class="vtab" id="nav-trend" onclick="view('trend')">📊 Tendências</button>
+      <button class="vtab" id="nav-busca" onclick="view('busca')">🔎 Buscar</button>
       <button class="vtab" id="nav-mkt" onclick="view('mkt')">📣 Marketing</button>
       <button class="vtab" id="nav-vend" onclick="view('vend')">👥 Vendedores</button>
       <button class="vtab" id="nav-rel" onclick="view('rel')">📈 Relatórios</button>
@@ -211,6 +213,14 @@
         <button class="per active" data-tp="tudo" onclick="setTrendPer('tudo')">Tudo</button>
       </div>
       <div id="trendContent"></div>
+    </section>
+
+    <section id="view-busca" class="hidden">
+      <h2 style="font-size:22px;margin-bottom:6px">Buscar nas calls</h2>
+      <p style="color:var(--muted);font-size:13px;margin-bottom:14px">Procure um concorrente, objeção, termo dito na call, cliente ou segmento. A busca olha dentro das transcrições e das análises de todas as calls.</p>
+      <input id="buscaInput" placeholder="🔎 Ex.: 3CX, preço, integração, WhatsApp…" oninput="buscar()">
+      <div id="buscaSug" class="chips" style="margin:12px 0"></div>
+      <div id="buscaRes"></div>
     </section>
 
     <section id="view-mkt" class="hidden">
@@ -350,11 +360,12 @@ function toggleTema(){
   aplicarTema(t); })();
 
 function view(v){
-  ['calls','trend','mkt','vend','rel','usuarios'].forEach(x=>{
+  ['calls','trend','busca','mkt','vend','rel','usuarios'].forEach(x=>{
     document.getElementById('view-'+x).classList.toggle('hidden',x!==v);
     document.getElementById('nav-'+x).classList.toggle('active',x===v);
   });
   if(v==='trend') renderTrend();
+  if(v==='busca') renderBusca();
   if(v==='mkt') renderMkt();
   if(v==='vend') renderVend();
   if(v==='rel') renderRelatorios();
@@ -560,6 +571,65 @@ function renderTrend(){
     </div>
     <div class="panel"><h3>🏷️ Segmentos atendidos</h3>${barras(tallyField(F,segOf))}</div>
     <div class="panel"><h3>📉 Objeções que mais aparecem em perdas</h3>${objTable}</div>`;
+}
+
+// ---- Busca dentro das calls (client-side: transcrição + análise) ----
+// folded[]: texto sem acento/minúsculo; map[i] = índice no texto ORIGINAL (pra recortar o trecho certo)
+function foldMap(s){
+  s=s||''; let folded='', map=[];
+  for(let i=0;i<s.length;i++){ const f=s[i].toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); for(const ch of f){ folded+=ch; map.push(i); } }
+  return {folded, map};
+}
+function camposBusca(c){
+  const a=c.analise||{}; const arr=k=>Array.isArray(a[k])?a[k].map(x=>typeof x==='string'?x:JSON.stringify(x)).join(' · '):'';
+  return [
+    {tag:'Cliente', texto:c.cliente||''},
+    {tag:'Segmento', texto:segOf(c)},
+    {tag:'Resumo', texto:c.resumo||a.resumo||''},
+    {tag:'Concorrentes', texto:arr('concorrentes_citados')},
+    {tag:'Objeções', texto:[arr('objecoes'),arr('temas_objecao')].filter(Boolean).join(' · ')},
+    {tag:'Dores', texto:arr('dores')},
+    {tag:'Próximos passos', texto:arr('proximos_passos')},
+    {tag:'Transcrição', texto:c.transcript_dialogo||c.transcript||''},
+  ].filter(f=>f.texto && f.texto.trim());
+}
+function trechoDe(texto,fm,idxFold,lenFold){
+  const oIni=fm.map[idxFold], oFim=(fm.map[idxFold+lenFold-1]??oIni)+1;
+  const ini=Math.max(0,oIni-55), fim=Math.min(texto.length,oFim+90);
+  return (ini>0?'…':'')+esc(texto.slice(ini,oIni))+'<mark>'+esc(texto.slice(oIni,oFim))+'</mark>'+esc(texto.slice(oFim,fim))+(fim<texto.length?'…':'');
+}
+function cartaoBusca(c,hits){
+  const cls={positivo:'b-pos',neutro:'b-neu',negativo:'b-neg'}[c.sentimento]||'b-neu';
+  const segB=segOf(c)?`<span class="badge" style="background:var(--soft2);color:var(--muted)">🏷️ ${esc(segOf(c))}</span>`:'';
+  const snip=hits.slice(0,3).map(h=>`<div style="margin:7px 0;font-size:13px;line-height:1.55"><b style="color:var(--accent);font-size:10px;text-transform:uppercase;letter-spacing:.5px">${esc(h.tag)}</b><br>${h.trecho}</div>`).join('');
+  return `<div class="rcard" style="cursor:pointer" onclick="abrir('${c.id}')">
+    <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:4px">
+      <div><b style="font-family:'Quicksand';font-size:16px;color:var(--navy)">${esc(c.cliente||'Cliente não identificado')}</b>
+        <span style="color:var(--muted);font-size:12px;margin-left:8px">${new Date(c.data_call).toLocaleString('pt-BR')}</span></div>
+      <div class="badges">${segB}<span class="badge ${cls}">${esc(c.sentimento||'—')}</span></div></div>
+    ${snip}</div>`;
+}
+function buscaPor(t){ const i=document.getElementById('buscaInput'); if(i){ i.value=t; buscar(); } }
+function renderBusca(){
+  const sug=[...tallyArr(CALLS,'concorrentes_citados').slice(0,5).map(x=>x[0]), ...tallyObjecoes(CALLS).slice(0,5).map(x=>x[0])];
+  const box=document.getElementById('buscaSug');
+  box.innerHTML = sug.length ? '<span style="color:var(--muted);font-size:12px;align-self:center">Sugestões:</span>'+sug.map(s=>`<span class="chip" onclick="buscaPor('${(''+s).replace(/'/g,"\\'")}')">${esc(s)}</span>`).join('') : '';
+  buscar();
+}
+function buscar(){
+  const q=(document.getElementById('buscaInput').value||'').trim();
+  const res=document.getElementById('buscaRes');
+  if(q.length<2){ res.innerHTML='<div class="empty">Digite ao menos 2 caracteres para buscar.</div>'; return; }
+  const nq=foldMap(q).folded;
+  const achados=[];
+  CALLS.forEach(c=>{
+    const hits=[];
+    camposBusca(c).forEach(f=>{ const fm=foldMap(f.texto); const idx=fm.folded.indexOf(nq); if(idx>=0) hits.push({tag:f.tag, trecho:trechoDe(f.texto,fm,idx,nq.length)}); });
+    if(hits.length) achados.push({c, hits});
+  });
+  achados.sort((a,b)=>new Date(b.c.data_call)-new Date(a.c.data_call));
+  if(!achados.length){ res.innerHTML='<div class="empty">Nenhuma call menciona "'+esc(q)+'".</div>'; return; }
+  res.innerHTML='<p style="color:var(--muted);font-size:13px;margin-bottom:12px">'+achados.length+' call(s) encontradas</p>'+achados.map(a=>cartaoBusca(a.c,a.hits)).join('');
 }
 
 function renderVend(){
