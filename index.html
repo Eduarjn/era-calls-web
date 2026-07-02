@@ -161,6 +161,35 @@
   .tagpill{display:inline-block;font-size:12px;padding:4px 10px;border-radius:999px;margin:0 5px 5px 0;background:rgba(75,63,114,.10);color:var(--accent);font-weight:600}
   .tagpill.alt{background:rgba(192,57,43,.10);color:var(--red)}
   .stat .n.countup{font-variant-numeric:tabular-nums}
+
+  /* ---- Camada premium (estilo 21st/Aceternity) ---- */
+  /* Aurora de fundo, sutil e à deriva */
+  body::before{content:'';position:fixed;inset:-25% -10% auto -10%;height:75vh;z-index:-1;pointer-events:none;
+    background:radial-gradient(42% 50% at 18% 18%,rgba(75,63,114,.16),transparent 70%),
+               radial-gradient(38% 46% at 86% 8%,rgba(65,123,90,.14),transparent 70%);
+    filter:blur(34px);animation:aurora 20s ease-in-out infinite alternate}
+  @keyframes aurora{0%{transform:translate3d(0,0,0) scale(1)}100%{transform:translate3d(2%,-3%,0) scale(1.1)}}
+  /* Spotlight seguindo o cursor nos cards */
+  .panel,.call,.rcard,.stat,.seg-card,.mkt-hero,.loginbox,.upload{position:relative;overflow:hidden;isolation:isolate}
+  .panel::before,.call::before,.rcard::before,.stat::before,.seg-card::before,.mkt-hero::before,.upload::before{
+    content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:-1;opacity:0;transition:opacity .35s;
+    background:radial-gradient(240px circle at var(--mx,50%) var(--my,0%),rgba(120,100,190,.16),transparent 62%)}
+  .panel:hover::before,.call:hover::before,.rcard:hover::before,.stat:hover::before,.seg-card:hover::before,.mkt-hero:hover::before,.upload:hover::before{opacity:1}
+  .call:hover,.stat:hover,.seg-card:hover{border-color:#C9C7DE}
+  /* Sheen nos botões primários */
+  .btn-primary{position:relative;overflow:hidden}
+  .btn-primary::after{content:'';position:absolute;top:0;left:-130%;width:55%;height:100%;transform:skewX(-18deg);pointer-events:none;
+    background:linear-gradient(100deg,transparent,rgba(255,255,255,.38),transparent);transition:left .6s ease}
+  .btn-primary:hover::after{left:140%}
+  /* Entrada suave ao trocar de aba */
+  .viewfade{animation:viewIn .42s cubic-bezier(.2,.8,.2,1) both}
+  @keyframes viewIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  /* Barra de navegação com sublinhado animado */
+  .vtab{position:relative;transition:color .2s,background .2s,transform .12s}
+  .vtab:hover{transform:translateY(-1px)}
+  /* Respeita quem prefere menos movimento */
+  @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}}
+
   @media(max-width:680px){.stats{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
@@ -385,6 +414,8 @@ function view(v){
     document.getElementById('view-'+x).classList.toggle('hidden',x!==v);
     document.getElementById('nav-'+x).classList.toggle('active',x===v);
   });
+  const sec=document.getElementById('view-'+v);
+  if(sec){ sec.classList.remove('viewfade'); void sec.offsetWidth; sec.classList.add('viewfade'); }
   if(v==='trend') renderTrend();
   if(v==='mkt') renderMkt();
   if(v==='rel'){ renderRelatorios(); renderBusca(); }
@@ -482,10 +513,11 @@ function render(){
   const pos=filt.filter(c=>c.sentimento==='positivo').length;
   const avg=filt.length?Math.round(filt.reduce((s,c)=>s+(c.score_oportunidade||0),0)/filt.length):0;
   document.getElementById('stats').innerHTML=`
-    <div class="stat"><div class="n">${filt.length}</div><div class="l">Calls no período</div></div>
-    <div class="stat"><div class="n" style="color:var(--green)">${pos}</div><div class="l">Sentimento positivo</div></div>
-    <div class="stat"><div class="n" style="color:var(--accent)">${avg}</div><div class="l">Score médio</div></div>
-    <div class="stat"><div class="n" style="color:var(--blue)">${new Set(filt.map(c=>c.cliente).filter(Boolean)).size}</div><div class="l">Clientes</div></div>`;
+    <div class="stat"><div class="n countup" data-val="${filt.length}">0</div><div class="l">Calls no período</div></div>
+    <div class="stat"><div class="n countup" data-val="${pos}" style="color:var(--green)">0</div><div class="l">Sentimento positivo</div></div>
+    <div class="stat"><div class="n countup" data-val="${avg}" style="color:var(--accent)">0</div><div class="l">Score médio</div></div>
+    <div class="stat"><div class="n countup" data-val="${new Set(filt.map(c=>c.cliente).filter(Boolean)).size}" style="color:var(--blue)">0</div><div class="l">Clientes</div></div>`;
+  ativarCountUp();
   const cont=document.getElementById('dias'); cont.innerHTML='';
   const map={}, ordem=[];
   filt.forEach(c=>{ const k=diaKey(c.data_call); if(!map[k]){map[k]={label:diaLabel(c.data_call),calls:[]};ordem.push(k);} map[k].calls.push(c); });
@@ -624,21 +656,22 @@ function renderTrend(){
     : '<p style="color:var(--muted)">Marque calls como Ganho/Perdido no detalhe para cruzar objeções com perdas.</p>';
   document.getElementById('trendContent').innerHTML=`
     <div class="stats">
-      <div class="stat"><div class="n">${F.length}</div><div class="l">Calls no período</div></div>
-      <div class="stat"><div class="n" style="color:var(--green)">${res.ganho}</div><div class="l">Ganhas</div></div>
-      <div class="stat"><div class="n" style="color:var(--red)">${res.perdido}</div><div class="l">Perdidas</div></div>
-      <div class="stat"><div class="n" style="color:var(--accent)">${taxa}%</div><div class="l">Taxa de ganho${decididas?'':' (—)'}</div></div>
+      <div class="stat"><div class="n countup" data-val="${F.length}">0</div><div class="l">Calls no período</div></div>
+      <div class="stat"><div class="n countup" data-val="${res.ganho}" style="color:var(--green)">0</div><div class="l">Ganhas</div></div>
+      <div class="stat"><div class="n countup" data-val="${res.perdido}" style="color:var(--red)">0</div><div class="l">Perdidas</div></div>
+      <div class="stat"><div class="n countup" data-val="${taxa}" data-suf="%" style="color:var(--accent)">0</div><div class="l">Taxa de ganho${decididas?'':' (—)'}</div></div>
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:16px">
-      <div class="panel"><h3>🧱 Objeções mais comuns</h3>${barras(tallyObjecoes(F))}</div>
-      <div class="panel"><h3>🆚 Concorrentes mais citados</h3>${barras(tallyArr(F,'concorrentes_citados'))}</div>
+      <div class="panel"><h3>🧱 Objeções mais comuns</h3>${animBar(tallyObjecoes(F))}</div>
+      <div class="panel"><h3>🆚 Concorrentes mais citados</h3>${animBar(tallyArr(F,'concorrentes_citados'))}</div>
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:16px">
-      <div class="panel"><h3>🩺 Dores recorrentes</h3>${barras(tallyArr(F,'dores'))}</div>
+      <div class="panel"><h3>🩺 Dores recorrentes</h3>${animBar(tallyArr(F,'dores'))}</div>
       <div class="panel"><h3>🏆 Resultado (win/loss)</h3>${pieRes}</div>
     </div>
-    <div class="panel"><h3>🏷️ Segmentos atendidos</h3>${barras(tallyField(F,segOf))}</div>
+    <div class="panel"><h3>🏷️ Segmentos atendidos</h3>${animBar(tallyField(F,segOf))}</div>
     <div class="panel"><h3>📉 Objeções que mais aparecem em perdas</h3>${objTable}</div>`;
+  ativarCountUp();
 }
 
 // ---- Busca dentro das calls (client-side: transcrição + análise) ----
@@ -1049,6 +1082,22 @@ function tab(q){ const a=q==='a';
 function showProg(html){ document.getElementById('progBody').innerHTML=html; document.getElementById('ovProg').classList.add('show'); }
 function fechar(id){ document.getElementById(id).classList.remove('show'); }
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){fechar('ovDet');fechar('ovProg');}});
+
+// Spotlight: cada card acende um brilho radial na posição do cursor (estilo 21st/Aceternity)
+(function(){
+  const sel='.panel,.call,.rcard,.stat,.seg-card,.mkt-hero,.upload,.loginbox';
+  let raf=0, el=null, ev=null;
+  document.addEventListener('pointermove',e=>{
+    const alvo=e.target.closest&&e.target.closest(sel);
+    if(!alvo) return; el=alvo; ev=e;
+    if(raf) return;
+    raf=requestAnimationFrame(()=>{ raf=0; if(!el||!ev) return;
+      const r=el.getBoundingClientRect();
+      el.style.setProperty('--mx',((ev.clientX-r.left)/r.width*100).toFixed(1)+'%');
+      el.style.setProperty('--my',((ev.clientY-r.top)/r.height*100).toFixed(1)+'%');
+    });
+  },{passive:true});
+})();
 
 init();
 </script>
