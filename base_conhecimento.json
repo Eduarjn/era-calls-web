@@ -1,0 +1,356 @@
+{
+  "temas": [
+    {
+      "id": "pabx-nuvem",
+      "nome": "PABX em Nuvem",
+      "resumo": "Módulo principal de telefonia da plataforma Calliope, 100% em nuvem e acessado via web. Cobre a operação básica de voz: rotas de entrada e saída, gateways/tronco SIP, ramais/extensões, ligações receptivas, ativas e internas. Indicado para clientes de pequeno a médio porte que não precisam de relatórios robustos de call center.",
+      "capacidades": [
+        "Configuração de rotas de entrada e saída (LDN, local, SGNG/0800)",
+        "Cadastro de gateways/SIP trunk com credenciais da operadora",
+        "Criação de ramais individuais ou em massa (range)",
+        "Grupos de ring com estratégia sequencial ou simultânea",
+        "Bina fixa/inteligente por rota de saída",
+        "Centro de conferência por extensão",
+        "Softphone web (Webfone), softphone desktop/celular e aparelhos físicos (IP phone)"
+      ],
+      "limitacoes": [
+        "Menos recursos e estratégias de distribuição que o módulo Call Center",
+        "Relatórios limitados a registro de chamadas e relatório de URA"
+      ],
+      "palavras_chave": ["PABX", "PABX em nuvem", "ramal", "extensão", "rota de entrada", "rota de saída", "SIP trunk", "gateway", "bina", "grupo de ring", "conferência", "operadora", "VoIP"]
+    },
+    {
+      "id": "webfone-softphone",
+      "nome": "Webfone / Softphone",
+      "resumo": "Softphone web nativo da plataforma (Webfone) que o agente acessa direto no navegador, sem instalar nada, para fazer e receber ligações. Basta vincular um ramal ao usuário. Também há suporte a softphone tipo MicroSIP, apps de celular/desktop e aparelhos físicos usando as credenciais do ramal (DNS, extensão e senha).",
+      "capacidades": [
+        "Atender e originar ligações pelo navegador",
+        "Colocar pausas e logar/deslogar em departamentos",
+        "Auto-answer (auto-atendimento) que atende a ligação automaticamente",
+        "Personalização de logo/ícone do Webfone (white label)",
+        "Registro de ramal via WebRTC/codec Opus em softphones de terceiros"
+      ],
+      "limitacoes": [
+        "Notificação do auto-answer é de milissegundos (quase não dá tempo de reagir antes de já cair atendida)",
+        "O softphone próprio (estilo MicroSIP) não é personalizável em white label; só o Webfone permite trocar logo"
+      ],
+      "palavras_chave": ["Webfone", "softphone", "MicroSIP", "webphone", "auto-answer", "auto-atendimento", "ramal vinculado", "WebRTC"]
+    },
+    {
+      "id": "call-center-filas",
+      "nome": "Call Center e Filas/Departamentos",
+      "resumo": "Módulo avançado de contact center, mais robusto que o PABX básico. Organiza o atendimento em filas (departamentos) com estratégias de distribuição de chamadas, agentes vinculados, e exige que o agente mude de status (login, pausa, logout) para receber ligações. Permite controle fino da jornada e da produtividade do atendente.",
+      "capacidades": [
+        "Estratégias de entrega: reproduzir em todos, agente desocupado há mais tempo, menor tempo de comunicação, menor nº de chamadas, sequencial, aleatória",
+        "Vinculação de agentes e agente multiskill (logado em vários departamentos)",
+        "Música de espera por departamento e listas de pausa",
+        "Callback automático de ligações abandonadas na fila",
+        "Aviso técnico (áudio de intermitência) no início da ligação",
+        "Tempo máximo de espera e transbordo de fila lotada para outra fila"
+      ],
+      "limitacoes": [
+        "Tem custo maior que o PABX básico",
+        "Exige que o agente sempre altere status manualmente para receber/pausar"
+      ],
+      "palavras_chave": ["call center", "fila", "departamento", "agente", "estratégia de distribuição", "multiskill", "callback", "pausa", "login", "logout", "aviso técnico", "posição de atendimento"]
+    },
+    {
+      "id": "ura-ivr",
+      "nome": "URA / IVR",
+      "resumo": "Árvore de opções de atendimento (menu digitável) montada dentro da plataforma. Reproduz uma saudação em áudio e encaminha a ligação conforme a opção digitada pelo cliente, para departamentos, sub-URAs, extensões ou IA. Também é usada como blindagem para confirmar que um humano atendeu (evita caixa postal) antes de encaminhar para a IA.",
+      "capacidades": [
+        "Saudação longa e curta com áudios importados",
+        "Encadeamento de opções e sub-URAs",
+        "Destino padrão (timeout) e encerramento (hangup)",
+        "URA de blindagem para validar atendimento humano antes da IA",
+        "Relatório de URA com quantas ligações digitaram cada opção",
+        "ASR (reconhecimento de fala na URA) como item adicional"
+      ],
+      "limitacoes": [
+        "A URA só encaminha/dispara a chamada; não retorna nem faz tratativa de volta (não integra API bidirecional nativamente)",
+        "Em alguns clientes a configuração da URA é feita junto com o time de desenvolvimento e não fica liberada para o cliente editar"
+      ],
+      "palavras_chave": ["URA", "IVR", "menu de opções", "digite 1", "saudação", "árvore de opções", "blindagem", "ASR", "reconhecimento de fala"]
+    },
+    {
+      "id": "discador-automatico",
+      "nome": "Discador Automático (Preditivo/Progressivo)",
+      "resumo": "Marcador automático que importa um mailing (lista de contatos) ou puxa leads do CRM do cliente via API em horários definidos e disca em volume. Ao ser atendida, a chamada é encaminhada para um atendente humano ou para a IA de voz. Roda do lado da ERA e é a base da operação de saída (cobrança, vendas ativas).",
+      "capacidades": [
+        "Importação de mailing (Excel/CSV) ou consulta automática ao CRM via API",
+        "Discagem por ordem de prioridade e múltiplos números por contato",
+        "Agendamento de volume por período (ex.: 2.500 de manhã, 2.500 à tarde)",
+        "Encaminhamento da chamada atendida para agente humano ou IA",
+        "Dashboard em tempo real (livres, agendadas, em curso) e relatório do discador com sinalização SIP",
+        "Campo mínimo necessário: número de telefone (+ identificador CPF/CNPJ/ID)"
+      ],
+      "limitacoes": [
+        "O status/dados do discador em tempo real não são disponibilizados via webhook; a consulta via API é sob demanda (o cliente cria um temporizador para consultar)",
+        "Alto volume de discagem pode ter custo elevado para o cliente",
+        "Sem URA de blindagem, ligações não atendidas/caixa postal podem gerar custo de minuto de IA"
+      ],
+      "palavras_chave": ["discador", "marcador automático", "preditivo", "progressivo", "mailing", "lead", "discagem", "5000 ligações", "cadência", "sinalização SIP", "caixa postal"]
+    },
+    {
+      "id": "ia-voz",
+      "nome": "IA de Voz (ElevenLabs)",
+      "resumo": "IA que atende e faz ligações por voz com fala natural, rodando sobre a ElevenLabs (11Labs) integrada ao discador e ao CRM do cliente. Conduz a conversa, consulta o sistema do cliente em tempo real (boletos, valores, política de parcelamento) via function calling, negocia, fecha acordo sozinha e dispara comprovante no WhatsApp. Faz transbordo para humano quando não resolve.",
+      "capacidades": [
+        "Voz natural com ajuste de tipo de voz, temperatura, energia, velocidade e estabilidade",
+        "Consulta em tempo real ao CRM do cliente durante a conversa (function calling)",
+        "Negociação e fechamento autônomo de acordos (ex.: desconto e parcelamento)",
+        "Disparo automático de comprovante no WhatsApp (áudio + resumo + texto)",
+        "Configuração via prompt/base de conhecimento com assessoria da ERA",
+        "Transbordo humano por timeout quando a IA não resolve"
+      ],
+      "limitacoes": [
+        "No transbordo, o atendente não recebe automaticamente o histórico/contexto da conversa da IA — pode precisar renegociar do zero (link com histórico é melhoria a desenvolver)",
+        "Produto ainda em modelagem, sem cliente rodando o fluxo completo em produção",
+        "URA de blindagem é praticamente obrigatória para não gastar minuto de IA com caixa postal",
+        "Cobrança da minutagem de voz pode ficar na conta ElevenLabs do próprio cliente (ERA não faz bilhetagem nesse modelo)"
+      ],
+      "palavras_chave": ["IA de voz", "ElevenLabs", "11Labs", "prompt", "temperatura", "voz natural", "negociação", "cobrança", "acordo", "comprovante", "function calling", "por minuto", "transbordo"]
+    },
+    {
+      "id": "ia-atendimento-generativa",
+      "nome": "IA Generativa de Atendimento (texto)",
+      "resumo": "Inteligência artificial generativa para os canais de texto do Omnichannel (WhatsApp, Instagram, Messenger, Telegram). Configurada por prompt/treinamento, atua como suporte nível 1, qualifica leads e automatiza processos via integração com o CRM (consulta cadastro, inadimplência, envia boletos). Trabalha 24/7 e direciona para um departamento/humano quando não resolve.",
+      "capacidades": [
+        "Criação de prompt e base de conhecimento (perguntas/respostas)",
+        "Suporte nível 1 e qualificação de leads",
+        "Integração com CRM para consultar/inserir dados durante a conversa",
+        "Atendimento 24x7 e direcionamento para departamento humano",
+        "Envio de boletos e segunda via automatizados"
+      ],
+      "limitacoes": [
+        "Não gera análise/relatório do atendimento por si só (a análise fica com o Core Metrics ou o módulo de análise)",
+        "É um módulo opcional"
+      ],
+      "palavras_chave": ["IA generativa", "assistente virtual", "chatbot com IA", "qualificação de lead", "suporte nível 1", "prompt", "atendimento automatizado", "24x7"]
+    },
+    {
+      "id": "omnichannel-chat",
+      "nome": "Omnichannel e Chatbot (Flow)",
+      "resumo": "Módulo que unifica os canais de mensageria em uma só interface: WhatsApp oficial (Meta, 360, WhatsApp Cloud) e não oficial (QR Code/Business), Instagram, Messenger, Telegram, Google Chat, e-mail/Gmail e Live Chat do site. Cada número é vinculado a um fluxo de atendimento (chatbot) montado por clica-e-arrasta no Flow, com direcionamento para departamentos.",
+      "capacidades": [
+        "Chatbot visual (Flow) com menu de opções, mensagens, coleta de dados e regras de tempo",
+        "WhatsApp oficial e não oficial (QR Code) simultâneos, ativo e receptivo",
+        "Interface unificada (MailChat) para atender texto e voz na mesma tela",
+        "Retorno ao último agente (cliente cai com quem já o atendeu)",
+        "Tabulação, transferência, lembretes/notas internas e jornada do cliente",
+        "Mensagens favoritas (atalhos com hashtag) e grupos privados internos"
+      ],
+      "limitacoes": [
+        "WhatsApp não oficial (QR Code) está sujeito a banimento/bloqueio; recomenda-se o oficial",
+        "Após 24h de inatividade a conversa expira e exige envio de template (regra da Meta, não da plataforma)",
+        "Canais como Instagram, Messenger, Telegram, e-mail e Live Chat funcionam só no receptivo (só WhatsApp faz ativo)",
+        "Ainda não há API para originar ligação de voz via WhatsApp (chamada de voz fica no PABX)",
+        "O nome do cliente pode não persistir se salvo manualmente (sobrescrito pelo status), pendente de integração/correção"
+      ],
+      "palavras_chave": ["Omnichannel", "WhatsApp", "chatbot", "Flow", "fluxo de atendimento", "Instagram", "Messenger", "Telegram", "live chat", "QR Code", "canal oficial", "template", "MailChat", "tabulação", "jornada do cliente"]
+    },
+    {
+      "id": "disparos-template-whatsapp",
+      "nome": "Disparos e Templates de WhatsApp",
+      "resumo": "Recurso para envio ativo de mensagens via WhatsApp, individual ou em massa, usando templates (HSM) aprovados na Meta. Há disparo imediato e disparo programado/agendado (com intervalo entre envios), importação de lista CSV e vínculo do disparo a um Flow, agente ou número específico. O broker/Meta é quem processa o envio por trás.",
+      "capacidades": [
+        "Disparo imediato e disparo programado/agendado com tempo entre envios",
+        "Importação de lista CSV (telefone, agente, nome do cliente + parâmetros)",
+        "Templates cadastrados na plataforma e aprovados na Meta",
+        "Vínculo do disparo a um Flow (via ID do fluxo na URL), agente ou número",
+        "Seleção do número de origem (cobrança, relacionamento, etc.)",
+        "Token de segurança de API para integração externa"
+      ],
+      "limitacoes": [
+        "A plataforma sempre retorna sucesso no disparo; os erros reais são os códigos da Meta (o cliente precisa mapear os erros da Meta/broker, não da ERA)",
+        "Divergência de nono dígito pode gerar conversa duplicada quando o cliente responde",
+        "Divergência entre nome salvo na plataforma e no CRM pode gerar impacto"
+      ],
+      "palavras_chave": ["disparo", "template", "HSM", "disparo em massa", "campanha", "agendamento", "broker", "Meta", "token API", "attendance_id", "linkage flow", "erro da meta"]
+    },
+    {
+      "id": "permissoes-acessos",
+      "nome": "Permissões e Níveis de Acesso",
+      "resumo": "Modelo de permissões com três níveis principais: Administrador (acesso total a configurações e manutenção), Supervisor (foco em monitoria e relatórios, restrito aos departamentos aos quais está vinculado) e Agente (foco em atendimento). Há permissões separadas por módulo (PABX/Call Center e Omnichannel). Clientes white label têm ainda o Super Admin, com acesso a todos os subdomínios.",
+      "capacidades": [
+        "Administrador com acesso completo por módulo",
+        "Supervisor vinculado a departamento para monitorar e consultar relatórios",
+        "Agente focado em atendimento (voz ou texto)",
+        "Configurações por usuário: nº de atendimentos, envio de template, bloqueio de edição de CPF/nome, transferência",
+        "Super Admin (white label) navega por todos os subdomínios"
+      ],
+      "limitacoes": [
+        "Agente não visualiza conversas atreladas a outro responsável (só supervisor/admin); para isso precisa virar supervisor do departamento"
+      ],
+      "palavras_chave": ["permissão", "administrador", "supervisor", "agente", "níveis de acesso", "super admin", "gestor de usuários", "credenciais"]
+    },
+    {
+      "id": "monitoria-tempo-real",
+      "nome": "Monitoria e Dashboards em Tempo Real",
+      "resumo": "Painéis que mostram em tempo real o que acontece nas filas de voz e de texto: chamadas/conversas aguardando, agentes ocupados/livres/em pausa, tempos médios (espera, atendimento, primeira resposta) e gráficos. Permite escuta oculta de ligações e comandos para interagir (falar com um lado, fazer conferência), sem que agente ou cliente saibam.",
+      "capacidades": [
+        "Dashboard em tempo real por departamento (voz e Omnichannel)",
+        "Escuta/monitoria oculta de chamadas e conversas ativas",
+        "Comandos: falar com o agente (1), com o cliente (2), conferência (3), voltar (0)",
+        "Estados do agente (livre, em pausa, em ligação, deslogado) e forçar login/logout",
+        "Painel do operador (status de ramais registrados) e captura de chamadas",
+        "Horário de maior movimentação (HMM) e ranking de cidades/DDD que mais ligam",
+        "Dashboards customizáveis (seleção de filas a exibir)"
+      ],
+      "limitacoes": [],
+      "palavras_chave": ["monitoria", "dashboard", "tempo real", "escuta", "conferência", "painel do operador", "HMM", "nível de serviço", "chamadas em fila", "status do agente"]
+    },
+    {
+      "id": "relatorios",
+      "nome": "Relatórios e Registro de Chamadas",
+      "resumo": "Conjunto amplo de relatórios para voz e texto: registro/histórico de chamadas, agente histórico, consolidação de agentes, fila performance, HMM, histórico de transferências, tabulações, pausas, pesquisa de satisfação, relatório de conversas e de URA. Mostram toda a rastreabilidade (protocolo, direção, quem atendeu, tempos, quem desligou) e permitem exportação em CSV/Excel.",
+      "capacidades": [
+        "Registro de chamadas com protocolo, direção, ramal, tempos e quem desligou (ramal/rede pública/PABX)",
+        "Agente histórico e consolidação (login/logout, pausas, ociosidade, TMA)",
+        "Fila performance, HMM, histórico de transferências e tabulações",
+        "Relatório de conversas do Omnichannel (entrada/disparo, canal, status, histórico)",
+        "Exportação de todos os relatórios em CSV/Excel",
+        "Filtros por fila, agente, ramal, canal, tags, cliente, período"
+      ],
+      "limitacoes": [],
+      "palavras_chave": ["relatório", "registro de chamadas", "agente histórico", "consolidação", "fila performance", "HMM", "protocolo", "rastreabilidade", "CSV", "Excel", "métricas diárias", "tabulação"]
+    },
+    {
+      "id": "gravacao-chamadas",
+      "nome": "Gravação de Chamadas e Retenção",
+      "resumo": "Todas as ligações são gravadas e armazenadas no servidor da plataforma, com link individual por gravação, disponíveis para ouvir ou baixar dentro do relatório de chamadas. A retenção padrão é de 12 meses, podendo ser estendida em contrato. Também é possível fornecer acesso SFTP para extração em massa das gravações.",
+      "capacidades": [
+        "Gravação automática de ligações e conversas com link único por gravação",
+        "Download individual pelo relatório ou extração em massa via SFTP",
+        "Retenção padrão de 12 meses, extensível por contrato",
+        "Disponibilização das gravações via API (consulta por data/período)",
+        "No white label, retenção sem limite quando hospedado na infra do cliente"
+      ],
+      "limitacoes": [
+        "A transcrição das ligações do PABX não é entregue sem integração/módulo específico (via TTS/transcrição)",
+        "Não havia certeza sobre existência de API de download em massa da transcrição do PABX (a validar com o time técnico)"
+      ],
+      "palavras_chave": ["gravação", "gravação de chamadas", "retenção", "12 meses", "SFTP", "download em massa", "link da gravação", "áudio", "Calliope.com.br"]
+    },
+    {
+      "id": "pesquisa-satisfacao",
+      "nome": "Pesquisa de Satisfação",
+      "resumo": "Recurso que, ao final do atendimento (voz ou WhatsApp), encaminha a chamada/conversa para uma avaliação. O cliente avalia por dígitos (ex.: 0 a 5 ou 0 a 10), com áudios de introdução, pergunta e agradecimento. Os resultados ficam em um relatório de pesquisa de satisfação para medir a qualidade por agente/departamento.",
+      "capacidades": [
+        "Avaliação por dígitos ao final da ligação, com áudios configuráveis",
+        "Múltiplas pesquisas por atendimento (recomendado poucas)",
+        "Avaliação também disponível no atendimento por WhatsApp",
+        "Relatório de pesquisa de satisfação por agente e departamento"
+      ],
+      "limitacoes": [],
+      "palavras_chave": ["pesquisa de satisfação", "avaliação", "nota", "NPS", "qualidade do atendimento", "digite de 0 a 5"]
+    },
+    {
+      "id": "musica-audios-espera",
+      "nome": "Áudios e Música de Espera",
+      "resumo": "Gerenciamento de áudios importados na plataforma (máx. 10 MB, formato WAV) usados em qualquer ponto do fluxo: saudação, música de espera, fora de horário, feriados, aviso técnico e pesquisa. É possível configurar música/áudio de espera diferente por departamento, inclusive com dicas ou promoções específicas de cada setor.",
+      "capacidades": [
+        "Importação de áudios (WAV, até 10 MB) reutilizáveis no fluxo",
+        "Música de espera personalizada por departamento",
+        "Áudios de saudação, fora de horário, feriado e aviso técnico"
+      ],
+      "limitacoes": [
+        "Áudios devem obedecer ao formato WAV e ao limite de 10 MB"
+      ],
+      "palavras_chave": ["música de espera", "áudio", "WAV", "saudação", "aviso técnico", "fora de horário", "importar áudio"]
+    },
+    {
+      "id": "regras-tempo",
+      "nome": "Regras de Tempo, Horários e Feriados",
+      "resumo": "Condições temporais que controlam o roteamento conforme horário de expediente, dias da semana e feriados. O sistema lê as regras de cima para baixo até encontrar a que se encaixa; feriados devem ficar no topo da lista. Fora do horário, a ligação/conversa pode receber um áudio ou ser encaminhada a outro destino. As regras são separadas por módulo (voz e texto).",
+      "capacidades": [
+        "Configuração de horário de expediente por departamento",
+        "Regras de feriado (data/mês/ano) com prioridade no topo da lista",
+        "Encaminhamento ou áudio de fora de horário",
+        "Regras independentes para voz (PABX) e texto (Omnichannel)"
+      ],
+      "limitacoes": [
+        "A mesma regra não vale para voz e texto ao mesmo tempo; precisa ser configurada em cada módulo separadamente"
+      ],
+      "palavras_chave": ["regra de tempo", "horário de atendimento", "expediente", "feriado", "condição temporal", "fora do horário", "time route"]
+    },
+    {
+      "id": "encaminhamento-siga-me",
+      "nome": "Encaminhamento e Siga-me (Follow-me)",
+      "resumo": "Configurações por ramal para redirecionar chamadas. O encaminhamento manda todas as ligações de um ramal para outra extensão ou número externo; o Siga-me (Sigme) redireciona para um telefone pessoal/externo quando o ramal não atende, usando o PABX como ponte via rotas de saída.",
+      "capacidades": [
+        "Redirecionamento de todas as chamadas de um ramal para outra extensão ou número externo",
+        "Siga-me quando o ramal não atende, encaminhando para telefone pessoal",
+        "Uso do PABX como ponte para completar a chamada externa"
+      ],
+      "limitacoes": [
+        "Uma vez que a ligação sai da plataforma para um número externo, não há mais gerenciamento dela; se o destino externo não atender, a chamada se encerra ali"
+      ],
+      "palavras_chave": ["encaminhamento", "siga-me", "sigme", "follow-me", "desvio", "redirecionamento", "número externo"]
+    },
+    {
+      "id": "integracoes-crm",
+      "nome": "Integrações com CRM/ERP",
+      "resumo": "A plataforma integra com dezenas de CRMs e ERPs do mercado para consulta de cadastro (CPF/CNPJ), aviso de pendência financeira, envio de segunda via de boleto, auto-desbloqueio por confiança, abertura de tickets/ordens de serviço e popup/click-to-call com dados do cliente na tela do agente. Integrações se dão via API/IVR ou cc_event.lua; muitas já prontas no marketplace, outras exigem desenvolvimento.",
+      "capacidades": [
+        "Consulta de cadastro do assinante por CPF/CNPJ com popup na tela do agente (CTI)",
+        "Aviso de pendência financeira e roteamento inteligente (financeiro x suporte)",
+        "Segunda via de boleto (SMS/e-mail) e auto-desbloqueio por confiança",
+        "Abertura de tickets/protocolos e atualização de leads",
+        "Webphone e chat embutidos dentro do CRM (ex.: RD Station, Teams, Zendesk, Zoho)",
+        "Retorno de dados via API para Power BI/BI do cliente",
+        "Integrações via API/IVR ou script cc_event.lua"
+      ],
+      "limitacoes": [
+        "Integrações não disponíveis no marketplace exigem desenvolvimento e custo (a partir de R$ 1.500 por integração / R$ 220 por hora)",
+        "Homologação/testes de integração exigem autorização de um cliente existente para demonstrar o ambiente",
+        "Integração para levar transcrição/sentimentos das ligações a um CRM precisa ser customizada"
+      ],
+      "palavras_chave": ["integração", "CRM", "ERP", "API", "CTI", "popup", "click-to-call", "webphone embutido", "consulta CPF", "segunda via", "desbloqueio por confiança", "abertura de ticket", "Power BI", "IXC", "RD Station", "cc_event.lua"]
+    },
+    {
+      "id": "white-label",
+      "nome": "White Label e Subdomínios",
+      "resumo": "Modelo de negócio em que o cliente revende a plataforma sob a própria marca. Habilita subdomínios isolados por cliente final, permite hospedar o software na infraestrutura do próprio parceiro e traz a permissão exclusiva de Super Admin, que navega por todos os subdomínios. Cada subdomínio tem suas próprias configurações, gateways e rotas, isoladas dos demais.",
+      "capacidades": [
+        "Revenda da plataforma sob marca própria",
+        "Subdomínios isolados por cliente final, com configurações independentes",
+        "Permissão Super Admin com visão de todos os subdomínios",
+        "Hospedagem na infraestrutura do próprio parceiro (retenção de gravação sem limite)",
+        "Personalização de logo do Webfone"
+      ],
+      "limitacoes": [
+        "Configurações de um subdomínio não são compartilhadas com outro (gateways/rotas são próprios de cada um)",
+        "Necessário manter certificado do subdomínio válido para não exibir aviso de site inseguro"
+      ],
+      "palavras_chave": ["white label", "revenda", "subdomínio", "super admin", "marca própria", "hospedagem", "infraestrutura própria", "parceiro"]
+    },
+    {
+      "id": "core-metrics-analise",
+      "nome": "Core Metrics e Análise de Atendimento por IA",
+      "resumo": "Ferramenta/módulo (Core Metrics/CoreMetrix) que usa IA para analisar as conversas e ligações e devolver um relatório com nível de satisfação, frustração, risco de cancelamento, risco de não conformidade, sugestões de melhoria, nuvem de palavras, tipos de solicitação e taxa de resolução por atendente. Personalizável por cliente e complementado por um módulo mais simples de análise dentro dos próprios relatórios.",
+      "capacidades": [
+        "Análise por IA de conversas e ligações (satisfação, frustração, estresse do agente/cliente)",
+        "Risco de cancelamento, risco de não conformidade e sugestões de melhoria",
+        "Nuvem de palavras e tipos de solicitação em porcentagem",
+        "Taxa de resolução e desempenho por atendente",
+        "Mapa/ranking de cidades e DDDs que mais acionam",
+        "Módulo de análise padrão embutido nos relatórios (avaliação por estrelas)"
+      ],
+      "limitacoes": [
+        "É um módulo à parte, desenvolvido/customizado por cliente conforme o foco pedido",
+        "A análise da IA não é entregue via API/CSV padrão — só a rastreabilidade da conversa/ligação",
+        "Transcrição das chamadas do PABX depende de módulo de transcrição/TTS (nem sempre disponível via API)"
+      ],
+      "palavras_chave": ["Core Metrics", "CoreMetrix", "speech analytics", "análise de sentimento", "nuvem de palavras", "risco de cancelamento", "taxa de resolução", "não conformidade", "transcrição", "nível de satisfação"]
+    }
+  ],
+  "integracoes": [
+    "AdvGestor", "Absoluto", "Alta Rede", "Bentivi", "Cobmais", "eCob", "Finaz", "FreshSales", "Gerenet", "Interfocus", "Integrator (SGP)", "IXC", "Lógica Sistemas", "MK Solutions", "Movidesk", "Néctar", "Octadesk", "Ótimo Gestor", "PipeDrive", "Recovery", "Routerbox", "Sharp Spring", "Salesforce", "Siscobra", "Super Lógica", "Talent Web", "Top Sapp", "Ura Net", "Voalle / Synsuite", "Vanguard", "WebConsult", "Wedoo", "WGC", "Zendesk", "Zoho CRM/Desk", "Hubsoft", "Hubspot", "RD Station", "Microsoft Teams", "Moskit", "FlashAPP", "GSS", "TomTicket", "Senior", "Totvs", "Bitrix", "Kommo", "Guiar", "Imoview", "W2ibrasil", "CV", "SGU Suite (Unimed)", "RBX Soft"
+  ],
+  "fontes": [
+    "IA de voz.txt", "explicacaotomIA.txt", "explicacion.txt", "apresentatip.txt",
+    "treinamentocallcenter0omni.txt", "treinamentoomnimpd.txt", "treinamentowhitelabelcallcenter.txt",
+    "jam-video.txt", "jam-video (1).txt", "jam-video (2).txt", "Integrações Calliope.xlsx"
+  ]
+}

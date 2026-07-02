@@ -240,6 +240,7 @@
       <button class="vtab" id="nav-trend" onclick="view('trend')">📊 Tendências</button>
       <button class="vtab" id="nav-mkt" onclick="view('mkt')">📣 Marketing</button>
       <button class="vtab" id="nav-rel" onclick="view('rel')">📈 Relatórios</button>
+      <button class="vtab" id="nav-base" onclick="view('base')">📚 Base</button>
       <button class="vtab" id="nav-usuarios" onclick="view('usuarios')">👥 Usuários</button>
     </div>
 
@@ -317,6 +318,19 @@
       <div id="backfillMsg" style="font-size:13px;color:var(--muted);margin-bottom:10px"></div>
       <div id="relCharts"></div>
       <div id="relTable"></div>
+    </section>
+
+    <section id="view-base" class="hidden">
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px;margin-bottom:6px">
+        <div>
+          <h2 style="font-size:22px">Base de conhecimento</h2>
+          <p style="color:var(--muted);font-size:13px;margin-top:4px;max-width:640px">Respaldo do produto ERA/Calliope para consulta rápida durante e depois das calls — o que a plataforma faz, limitações e integrações. Não interfere na análise das calls.</p>
+        </div>
+        <span id="baseCount" style="color:var(--muted);font-size:13px"></span>
+      </div>
+      <input id="baseBusca" placeholder="🔎 Buscar tema, capacidade, limitação ou integração — ex.: URA, discador, WhatsApp, IXC…" oninput="renderBase()" style="margin:12px 0 4px">
+      <div id="baseSug" class="chips" style="margin:8px 0 16px"></div>
+      <div id="baseContent"></div>
     </section>
 
     <section id="view-usuarios" class="hidden">
@@ -425,7 +439,7 @@ function toggleTema(){
   aplicarTema(t); })();
 
 function view(v){
-  ['calls','trend','mkt','rel','usuarios'].forEach(x=>{
+  ['calls','trend','mkt','rel','base','usuarios'].forEach(x=>{
     document.getElementById('view-'+x).classList.toggle('hidden',x!==v);
     document.getElementById('nav-'+x).classList.toggle('active',x===v);
   });
@@ -434,7 +448,56 @@ function view(v){
   if(v==='trend') renderTrend();
   if(v==='mkt') renderMkt();
   if(v==='rel'){ renderRelatorios(); renderBusca(); }
+  if(v==='base') abrirBase();
   if(v==='usuarios') renderUsuarios();
+}
+
+/* ---- Base de conhecimento (respaldo do produto, só leitura) ---- */
+let BASE_KB=null, BASE_LOADING=false;
+async function abrirBase(){
+  if(BASE_KB){ renderBase(); return; }
+  if(BASE_LOADING) return;
+  BASE_LOADING=true;
+  document.getElementById('baseContent').innerHTML='<div class="empty">Carregando base de conhecimento…</div>';
+  try{
+    const r=await fetch('base_conhecimento.json',{cache:'no-store'});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    BASE_KB=await r.json();
+    renderBase();
+  }catch(e){
+    document.getElementById('baseContent').innerHTML='<div class="empty">Não foi possível carregar a base (base_conhecimento.json). '+esc(e.message)+'</div>';
+  }finally{ BASE_LOADING=false; }
+}
+function baseSetBusca(t){ document.getElementById('baseBusca').value=t; renderBase(); }
+function renderBase(){
+  if(!BASE_KB) return;
+  const q=(document.getElementById('baseBusca').value||'').trim().toLowerCase();
+  const temas=BASE_KB.temas||[], integs=BASE_KB.integracoes||[];
+  const match=t=>{
+    if(!q) return true;
+    const hay=[t.nome,t.resumo,(t.capacidades||[]).join(' '),(t.limitacoes||[]).join(' '),(t.palavras_chave||[]).join(' ')].join(' ').toLowerCase();
+    return hay.includes(q);
+  };
+  const fTemas=temas.filter(match);
+  const fIntegs=q? integs.filter(i=>i.toLowerCase().includes(q)) : integs;
+  // sugestões (chips de atalho) — só quando não há busca
+  const sug=document.getElementById('baseSug');
+  if(!q){
+    const destaques=['URA','Discador','IA de voz','WhatsApp','Relatórios','Gravação','Integrações','White label'];
+    sug.innerHTML=destaques.map(d=>`<span class="chip" onclick="baseSetBusca('${d}')">${d}</span>`).join('');
+  } else {
+    sug.innerHTML=`<span class="chip on" onclick="baseSetBusca('')">✕ limpar “${esc(q)}”</span>`;
+  }
+  document.getElementById('baseCount').textContent=`${fTemas.length} tema(s)${q?' · '+fIntegs.length+' integração(ões)':' · '+integs.length+' integrações'}`;
+  const cardTema=t=>{
+    const cap=(t.capacidades||[]).length?`<div style="margin-top:10px"><b style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">✅ Capacidades</b><ul style="margin:6px 0 0;padding-left:18px">${t.capacidades.map(c=>`<li style="margin:3px 0;line-height:1.5">${esc(c)}</li>`).join('')}</ul></div>`:'';
+    const lim=(t.limitacoes||[]).length?`<div style="margin-top:10px"><b style="font-size:12px;color:#C0392B;text-transform:uppercase;letter-spacing:.5px">⚠️ Limitações</b><ul style="margin:6px 0 0;padding-left:18px">${t.limitacoes.map(c=>`<li style="margin:3px 0;line-height:1.5;color:var(--ink)">${esc(c)}</li>`).join('')}</ul></div>`:'';
+    const kw=(t.palavras_chave||[]).length?`<div class="chips" style="margin-top:12px">${t.palavras_chave.map(k=>`<span class="chip" style="padding:4px 10px;font-size:12px" onclick="baseSetBusca('${esc(k).replace(/'/g,'')}')">${esc(k)}</span>`).join('')}</div>`:'';
+    return `<div class="panel"><h3 style="margin-bottom:8px">${esc(t.nome)}</h3><p style="line-height:1.55;color:var(--ink)">${esc(t.resumo)}</p>${cap}${lim}${kw}</div>`;
+  };
+  const temasHtml=fTemas.length?fTemas.map(cardTema).join(''):'<div class="empty">Nenhum tema encontrado.</div>';
+  const integHtml=fIntegs.length?`<div class="panel"><h3>🔌 Integrações disponíveis <span style="font-weight:400;color:var(--muted);font-size:13px">(${fIntegs.length})</span></h3><div class="chips">${fIntegs.map(i=>`<span class="chip" style="cursor:default">${esc(i)}</span>`).join('')}</div></div>`:'';
+  document.getElementById('baseContent').innerHTML=temasHtml+integHtml;
 }
 
 const drop=document.getElementById('drop'), fileInput=document.getElementById('file');
@@ -526,10 +589,13 @@ function diaLabel(s){
 }
 function cardEl(c,i){
   const cls={positivo:'b-pos',neutro:'b-neu',negativo:'b-neg'}[c.sentimento]||'b-neu';
+  const part=Array.isArray(c.participantes)?c.participantes:[];
+  const partHtml=part.length?`<div class="chips" style="margin-top:2px">${part.map(p=>`<span class="chip on" style="background:${corPessoa(p)};padding:3px 10px;font-size:12px;cursor:default">👤 ${esc(p)}</span>`).join('')}</div>`:'';
   const d=document.createElement('div'); d.className='call'; d.style.animationDelay=(i*.04)+'s'; d.onclick=()=>abrir(c.id);
   d.innerHTML=`<div class="name">${esc(c.cliente||'Cliente não identificado')}</div>
     <div class="meta">${new Date(c.data_call).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</div>
     <div class="badges"><span class="badge ${cls}">${esc(c.sentimento||'—')}</span><span class="badge b-score">Score ${c.score_oportunidade??'—'}</span>${c.resultado==='ganho'?'<span class="badge b-pos">✅ Ganho</span>':c.resultado==='perdido'?'<span class="badge b-neg">❌ Perdido</span>':''}</div>
+    ${partHtml}
     <div class="cardacts" onclick="event.stopPropagation()">
       <button onclick="renomearId('${c.id}')" title="Renomear">✏️ Renomear</button>
       <button onclick="excluirCall('${c.id}')" title="Excluir">🗑️</button>
