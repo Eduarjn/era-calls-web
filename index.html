@@ -587,6 +587,12 @@ function diaLabel(s){
   if(d.toDateString()===ontem.toDateString()) return 'Ontem';
   return d.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});
 }
+// badge do nível da escada de oferta (Entrada/Essencial/Profissional), lido da análise
+function escadaBadge(c){
+  const n=c.analise&&c.analise.nivel_escada; if(!n||n==='null') return '';
+  const cor={'Entrada':'#417B5A','Essencial':'#B9770E','Profissional':'#8E44AD'}[n]||'#7A5840';
+  return `<span class="badge" style="background:${cor}26;border:1px solid ${cor};color:${cor}">🪜 ${esc(n)}</span>`;
+}
 function cardEl(c,i){
   const cls={positivo:'b-pos',neutro:'b-neu',negativo:'b-neg'}[c.sentimento]||'b-neu';
   const part=Array.isArray(c.participantes)?c.participantes:[];
@@ -594,7 +600,7 @@ function cardEl(c,i){
   const d=document.createElement('div'); d.className='call'; d.style.animationDelay=(i*.04)+'s'; d.onclick=()=>abrir(c.id);
   d.innerHTML=`<div class="name">${esc(c.cliente||'Cliente não identificado')}</div>
     <div class="meta">${new Date(c.data_call).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</div>
-    <div class="badges"><span class="badge ${cls}">${esc(c.sentimento||'—')}</span><span class="badge b-score">Score ${c.score_oportunidade??'—'}</span>${c.resultado==='ganho'?'<span class="badge b-pos">✅ Ganho</span>':c.resultado==='perdido'?'<span class="badge b-neg">❌ Perdido</span>':''}</div>
+    <div class="badges"><span class="badge ${cls}">${esc(c.sentimento||'—')}</span><span class="badge b-score">Score ${c.score_oportunidade??'—'}</span>${escadaBadge(c)}${c.resultado==='ganho'?'<span class="badge b-pos">✅ Ganho</span>':c.resultado==='perdido'?'<span class="badge b-neg">❌ Perdido</span>':''}</div>
     ${partHtml}
     <div class="cardacts" onclick="event.stopPropagation()">
       <button onclick="renomearId('${c.id}')" title="Renomear">✏️ Renomear</button>
@@ -764,7 +770,10 @@ function renderTrend(){
       <div class="panel"><h3>🩺 Dores recorrentes</h3>${animBar(tallyArr(F,'dores'))}</div>
       <div class="panel"><h3>🏆 Resultado (win/loss)</h3>${pieRes}</div>
     </div>
-    <div class="panel"><h3>🏷️ Segmentos atendidos</h3>${animBar(tallyField(F,segOf))}</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:16px">
+      <div class="panel"><h3>🏷️ Segmentos atendidos</h3>${animBar(tallyField(F,segOf))}</div>
+      <div class="panel"><h3>🪜 Nível da escada de oferta</h3>${animBar(tallyField(F,c=>{const n=c.analise&&c.analise.nivel_escada;return (n&&n!=='null')?n:'';}))||''}<p style="color:var(--muted);font-size:12px;margin-top:8px">Entrada = voz/discador básico · Essencial = Omni + relatórios · Profissional = call center completo + ERP/White Label. Calls antigas: clique 🔄 Reanalisar para classificar.</p></div>
+    </div>
     <div class="panel"><h3>📉 Objeções que mais aparecem em perdas</h3>${objTable}</div>`;
   ativarCountUp();
 }
@@ -786,6 +795,7 @@ function camposBusca(c){
     {tag:'Objeções', texto:[arr('objecoes'),arr('temas_objecao')].filter(Boolean).join(' · ')},
     {tag:'Dores', texto:arr('dores')},
     {tag:'Próximos passos', texto:arr('proximos_passos')},
+    {tag:'Oferta', texto:[(a.nivel_escada&&a.nivel_escada!=='null')?a.nivel_escada:'',a.produto_recomendado||''].filter(Boolean).join(' · ')},
     {tag:'Transcrição', texto:c.transcript_dialogo||c.transcript||''},
   ].filter(f=>f.texto && f.texto.trim());
 }
@@ -1051,6 +1061,7 @@ function abrir(id){
     <div class="rcard"><h3>🏆 Resultado da oportunidade</h3>
       <div class="chips" id="resChips">${resultadoChips(c)}</div></div>
     <div class="rcard"><h3>📌 Resumo</h3><p>${esc(c.resumo||a.resumo||'—')}</p></div>
+    ${(a.nivel_escada&&a.nivel_escada!=='null')||a.produto_recomendado?`<div class="rcard"><h3>🪜 Oferta recomendada (escada ERA)</h3><p style="margin-bottom:6px">${escadaBadge(c)}</p><p>${esc(a.produto_recomendado||'—')}</p></div>`:''}
     ${qHtml}
     ${card('👥','Stakeholders / decisores',a.stakeholders)}
     ${card('🗺️','Ambiente atual (stack & volumes)',a.ambiente_atual)}
@@ -1080,6 +1091,8 @@ function copiarHandoff(id,btn){
   txt+='CLIENTE: '+(c.cliente||a.cliente||'—')+'\n';
   txt+='DATA: '+new Date(c.data_call).toLocaleString('pt-BR')+'\n';
   txt+='RESUMO: '+(c.resumo||a.resumo||'—')+'\n';
+  if((a.nivel_escada&&a.nivel_escada!=='null')||a.produto_recomendado)
+    txt+='OFERTA RECOMENDADA: '+(a.nivel_escada?('['+a.nivel_escada+'] '):'')+(a.produto_recomendado||'—')+'\n';
   if(q.orcamento||q.autoridade||q.necessidade||q.prazo)
     txt+='QUALIFICAÇÃO: orçamento: '+(q.orcamento||'—')+' | autoridade: '+(q.autoridade||'—')+' | necessidade: '+(q.necessidade||'—')+' | prazo: '+(q.prazo||'—')+'\n';
   txt+='\n';

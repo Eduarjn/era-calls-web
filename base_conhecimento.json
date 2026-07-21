@@ -17,7 +17,21 @@
         "Menos recursos e estratégias de distribuição que o módulo Call Center",
         "Relatórios limitados a registro de chamadas e relatório de URA"
       ],
-      "palavras_chave": ["PABX", "PABX em nuvem", "ramal", "extensão", "rota de entrada", "rota de saída", "SIP trunk", "gateway", "bina", "grupo de ring", "conferência", "operadora", "VoIP"]
+      "palavras_chave": [
+        "PABX",
+        "PABX em nuvem",
+        "ramal",
+        "extensão",
+        "rota de entrada",
+        "rota de saída",
+        "SIP trunk",
+        "gateway",
+        "bina",
+        "grupo de ring",
+        "conferência",
+        "operadora",
+        "VoIP"
+      ]
     },
     {
       "id": "webfone-softphone",
@@ -34,7 +48,16 @@
         "Notificação do auto-answer é de milissegundos (quase não dá tempo de reagir antes de já cair atendida)",
         "O softphone próprio (estilo MicroSIP) não é personalizável em white label; só o Webfone permite trocar logo"
       ],
-      "palavras_chave": ["Webfone", "softphone", "MicroSIP", "webphone", "auto-answer", "auto-atendimento", "ramal vinculado", "WebRTC"]
+      "palavras_chave": [
+        "Webfone",
+        "softphone",
+        "MicroSIP",
+        "webphone",
+        "auto-answer",
+        "auto-atendimento",
+        "ramal vinculado",
+        "WebRTC"
+      ]
     },
     {
       "id": "call-center-filas",
@@ -52,7 +75,20 @@
         "Tem custo maior que o PABX básico",
         "Exige que o agente sempre altere status manualmente para receber/pausar"
       ],
-      "palavras_chave": ["call center", "fila", "departamento", "agente", "estratégia de distribuição", "multiskill", "callback", "pausa", "login", "logout", "aviso técnico", "posição de atendimento"]
+      "palavras_chave": [
+        "call center",
+        "fila",
+        "departamento",
+        "agente",
+        "estratégia de distribuição",
+        "multiskill",
+        "callback",
+        "pausa",
+        "login",
+        "logout",
+        "aviso técnico",
+        "posição de atendimento"
+      ]
     },
     {
       "id": "ura-ivr",
@@ -70,7 +106,17 @@
         "A URA só encaminha/dispara a chamada; não retorna nem faz tratativa de volta (não integra API bidirecional nativamente)",
         "Em alguns clientes a configuração da URA é feita junto com o time de desenvolvimento e não fica liberada para o cliente editar"
       ],
-      "palavras_chave": ["URA", "IVR", "menu de opções", "digite 1", "saudação", "árvore de opções", "blindagem", "ASR", "reconhecimento de fala"]
+      "palavras_chave": [
+        "URA",
+        "IVR",
+        "menu de opções",
+        "digite 1",
+        "saudação",
+        "árvore de opções",
+        "blindagem",
+        "ASR",
+        "reconhecimento de fala"
+      ]
     },
     {
       "id": "discador-automatico",
@@ -89,7 +135,19 @@
         "Alto volume de discagem pode ter custo elevado para o cliente",
         "Sem URA de blindagem, ligações não atendidas/caixa postal podem gerar custo de minuto de IA"
       ],
-      "palavras_chave": ["discador", "marcador automático", "preditivo", "progressivo", "mailing", "lead", "discagem", "5000 ligações", "cadência", "sinalização SIP", "caixa postal"]
+      "palavras_chave": [
+        "discador",
+        "marcador automático",
+        "preditivo",
+        "progressivo",
+        "mailing",
+        "lead",
+        "discagem",
+        "5000 ligações",
+        "cadência",
+        "sinalização SIP",
+        "caixa postal"
+      ]
     },
     {
       "id": "ia-voz",
@@ -109,7 +167,21 @@
         "URA de blindagem é praticamente obrigatória para não gastar minuto de IA com caixa postal",
         "Cobrança da minutagem de voz pode ficar na conta ElevenLabs do próprio cliente (ERA não faz bilhetagem nesse modelo)"
       ],
-      "palavras_chave": ["IA de voz", "ElevenLabs", "11Labs", "prompt", "temperatura", "voz natural", "negociação", "cobrança", "acordo", "comprovante", "function calling", "por minuto", "transbordo"]
+      "palavras_chave": [
+        "IA de voz",
+        "ElevenLabs",
+        "11Labs",
+        "prompt",
+        "temperatura",
+        "voz natural",
+        "negociação",
+        "cobrança",
+        "acordo",
+        "comprovante",
+        "function calling",
+        "por minuto",
+        "transbordo"
+      ]
     },
     {
       "id": "ia-atendimento-generativa",
@@ -126,7 +198,16 @@
         "Não gera análise/relatório do atendimento por si só (a análise fica com o Core Metrics ou o módulo de análise)",
         "É um módulo opcional"
       ],
-      "palavras_chave": ["IA generativa", "assistente virtual", "chatbot com IA", "qualificação de lead", "suporte nível 1", "prompt", "atendimento automatizado", "24x7"]
+      "palavras_chave": [
+        "IA generativa",
+        "assistente virtual",
+        "chatbot com IA",
+        "qualificação de lead",
+        "suporte nível 1",
+        "prompt",
+        "atendimento automatizado",
+        "24x7"
+      ]
     },
     {
       "id": "omnichannel-chat",
@@ -147,7 +228,23 @@
         "Ainda não há API para originar ligação de voz via WhatsApp (chamada de voz fica no PABX)",
         "O nome do cliente pode não persistir se salvo manualmente (sobrescrito pelo status), pendente de integração/correção"
       ],
-      "palavras_chave": ["Omnichannel", "WhatsApp", "chatbot", "Flow", "fluxo de atendimento", "Instagram", "Messenger", "Telegram", "live chat", "QR Code", "canal oficial", "template", "MailChat", "tabulação", "jornada do cliente"]
+      "palavras_chave": [
+        "Omnichannel",
+        "WhatsApp",
+        "chatbot",
+        "Flow",
+        "fluxo de atendimento",
+        "Instagram",
+        "Messenger",
+        "Telegram",
+        "live chat",
+        "QR Code",
+        "canal oficial",
+        "template",
+        "MailChat",
+        "tabulação",
+        "jornada do cliente"
+      ]
     },
     {
       "id": "disparos-template-whatsapp",
@@ -166,7 +263,20 @@
         "Divergência de nono dígito pode gerar conversa duplicada quando o cliente responde",
         "Divergência entre nome salvo na plataforma e no CRM pode gerar impacto"
       ],
-      "palavras_chave": ["disparo", "template", "HSM", "disparo em massa", "campanha", "agendamento", "broker", "Meta", "token API", "attendance_id", "linkage flow", "erro da meta"]
+      "palavras_chave": [
+        "disparo",
+        "template",
+        "HSM",
+        "disparo em massa",
+        "campanha",
+        "agendamento",
+        "broker",
+        "Meta",
+        "token API",
+        "attendance_id",
+        "linkage flow",
+        "erro da meta"
+      ]
     },
     {
       "id": "permissoes-acessos",
@@ -182,7 +292,16 @@
       "limitacoes": [
         "Agente não visualiza conversas atreladas a outro responsável (só supervisor/admin); para isso precisa virar supervisor do departamento"
       ],
-      "palavras_chave": ["permissão", "administrador", "supervisor", "agente", "níveis de acesso", "super admin", "gestor de usuários", "credenciais"]
+      "palavras_chave": [
+        "permissão",
+        "administrador",
+        "supervisor",
+        "agente",
+        "níveis de acesso",
+        "super admin",
+        "gestor de usuários",
+        "credenciais"
+      ]
     },
     {
       "id": "monitoria-tempo-real",
@@ -198,7 +317,18 @@
         "Dashboards customizáveis (seleção de filas a exibir)"
       ],
       "limitacoes": [],
-      "palavras_chave": ["monitoria", "dashboard", "tempo real", "escuta", "conferência", "painel do operador", "HMM", "nível de serviço", "chamadas em fila", "status do agente"]
+      "palavras_chave": [
+        "monitoria",
+        "dashboard",
+        "tempo real",
+        "escuta",
+        "conferência",
+        "painel do operador",
+        "HMM",
+        "nível de serviço",
+        "chamadas em fila",
+        "status do agente"
+      ]
     },
     {
       "id": "relatorios",
@@ -213,7 +343,20 @@
         "Filtros por fila, agente, ramal, canal, tags, cliente, período"
       ],
       "limitacoes": [],
-      "palavras_chave": ["relatório", "registro de chamadas", "agente histórico", "consolidação", "fila performance", "HMM", "protocolo", "rastreabilidade", "CSV", "Excel", "métricas diárias", "tabulação"]
+      "palavras_chave": [
+        "relatório",
+        "registro de chamadas",
+        "agente histórico",
+        "consolidação",
+        "fila performance",
+        "HMM",
+        "protocolo",
+        "rastreabilidade",
+        "CSV",
+        "Excel",
+        "métricas diárias",
+        "tabulação"
+      ]
     },
     {
       "id": "gravacao-chamadas",
@@ -230,7 +373,17 @@
         "A transcrição das ligações do PABX não é entregue sem integração/módulo específico (via TTS/transcrição)",
         "Não havia certeza sobre existência de API de download em massa da transcrição do PABX (a validar com o time técnico)"
       ],
-      "palavras_chave": ["gravação", "gravação de chamadas", "retenção", "12 meses", "SFTP", "download em massa", "link da gravação", "áudio", "Calliope.com.br"]
+      "palavras_chave": [
+        "gravação",
+        "gravação de chamadas",
+        "retenção",
+        "12 meses",
+        "SFTP",
+        "download em massa",
+        "link da gravação",
+        "áudio",
+        "Calliope.com.br"
+      ]
     },
     {
       "id": "pesquisa-satisfacao",
@@ -243,7 +396,14 @@
         "Relatório de pesquisa de satisfação por agente e departamento"
       ],
       "limitacoes": [],
-      "palavras_chave": ["pesquisa de satisfação", "avaliação", "nota", "NPS", "qualidade do atendimento", "digite de 0 a 5"]
+      "palavras_chave": [
+        "pesquisa de satisfação",
+        "avaliação",
+        "nota",
+        "NPS",
+        "qualidade do atendimento",
+        "digite de 0 a 5"
+      ]
     },
     {
       "id": "musica-audios-espera",
@@ -257,7 +417,15 @@
       "limitacoes": [
         "Áudios devem obedecer ao formato WAV e ao limite de 10 MB"
       ],
-      "palavras_chave": ["música de espera", "áudio", "WAV", "saudação", "aviso técnico", "fora de horário", "importar áudio"]
+      "palavras_chave": [
+        "música de espera",
+        "áudio",
+        "WAV",
+        "saudação",
+        "aviso técnico",
+        "fora de horário",
+        "importar áudio"
+      ]
     },
     {
       "id": "regras-tempo",
@@ -272,7 +440,15 @@
       "limitacoes": [
         "A mesma regra não vale para voz e texto ao mesmo tempo; precisa ser configurada em cada módulo separadamente"
       ],
-      "palavras_chave": ["regra de tempo", "horário de atendimento", "expediente", "feriado", "condição temporal", "fora do horário", "time route"]
+      "palavras_chave": [
+        "regra de tempo",
+        "horário de atendimento",
+        "expediente",
+        "feriado",
+        "condição temporal",
+        "fora do horário",
+        "time route"
+      ]
     },
     {
       "id": "encaminhamento-siga-me",
@@ -286,7 +462,15 @@
       "limitacoes": [
         "Uma vez que a ligação sai da plataforma para um número externo, não há mais gerenciamento dela; se o destino externo não atender, a chamada se encerra ali"
       ],
-      "palavras_chave": ["encaminhamento", "siga-me", "sigme", "follow-me", "desvio", "redirecionamento", "número externo"]
+      "palavras_chave": [
+        "encaminhamento",
+        "siga-me",
+        "sigme",
+        "follow-me",
+        "desvio",
+        "redirecionamento",
+        "número externo"
+      ]
     },
     {
       "id": "integracoes-crm",
@@ -306,7 +490,24 @@
         "Homologação/testes de integração exigem autorização de um cliente existente para demonstrar o ambiente",
         "Integração para levar transcrição/sentimentos das ligações a um CRM precisa ser customizada"
       ],
-      "palavras_chave": ["integração", "CRM", "ERP", "API", "CTI", "popup", "click-to-call", "webphone embutido", "consulta CPF", "segunda via", "desbloqueio por confiança", "abertura de ticket", "Power BI", "IXC", "RD Station", "cc_event.lua"]
+      "palavras_chave": [
+        "integração",
+        "CRM",
+        "ERP",
+        "API",
+        "CTI",
+        "popup",
+        "click-to-call",
+        "webphone embutido",
+        "consulta CPF",
+        "segunda via",
+        "desbloqueio por confiança",
+        "abertura de ticket",
+        "Power BI",
+        "IXC",
+        "RD Station",
+        "cc_event.lua"
+      ]
     },
     {
       "id": "white-label",
@@ -323,7 +524,16 @@
         "Configurações de um subdomínio não são compartilhadas com outro (gateways/rotas são próprios de cada um)",
         "Necessário manter certificado do subdomínio válido para não exibir aviso de site inseguro"
       ],
-      "palavras_chave": ["white label", "revenda", "subdomínio", "super admin", "marca própria", "hospedagem", "infraestrutura própria", "parceiro"]
+      "palavras_chave": [
+        "white label",
+        "revenda",
+        "subdomínio",
+        "super admin",
+        "marca própria",
+        "hospedagem",
+        "infraestrutura própria",
+        "parceiro"
+      ]
     },
     {
       "id": "core-metrics-analise",
@@ -342,15 +552,190 @@
         "A análise da IA não é entregue via API/CSV padrão — só a rastreabilidade da conversa/ligação",
         "Transcrição das chamadas do PABX depende de módulo de transcrição/TTS (nem sempre disponível via API)"
       ],
-      "palavras_chave": ["Core Metrics", "CoreMetrix", "speech analytics", "análise de sentimento", "nuvem de palavras", "risco de cancelamento", "taxa de resolução", "não conformidade", "transcrição", "nível de satisfação"]
+      "palavras_chave": [
+        "Core Metrics",
+        "CoreMetrix",
+        "speech analytics",
+        "análise de sentimento",
+        "nuvem de palavras",
+        "risco de cancelamento",
+        "taxa de resolução",
+        "não conformidade",
+        "transcrição",
+        "nível de satisfação"
+      ]
+    },
+    {
+      "id": "escada-oferta",
+      "nome": "Escada de Oferta — Entrada / Essencial / Profissional",
+      "resumo": "Guia interno de qual composição oferecer conforme a NECESSIDADE demonstrada na call (não o setor). Derivada de 29 calls reais (estudo growth 2026-07). Classifique o cliente no degrau e ofereça o caminho de upgrade natural.",
+      "capacidades": [
+        "ENTRADA — operação individual/pequena, sem central hoje, decide rápido mas é sensível a preço. Oferta: Era Voz (Básico/Padrão) + Call Center Discador + DID. Argumento: 'Pare de discar na mão — a mesma central que os grandes usam, do tamanho da sua operação.' Upgrade: quando ganhar volume ou pedir WhatsApp automatizado → Essencial.",
+        "ESSENCIAL — operação pequena-média, canais fragmentados, precisa de relatório consolidado p/ diretoria + 1 integração de CRM. Oferta: Era Omni Padrão (relatórios avançados, integração nativa 200+ CRMs, filas por departamento, pesquisa de satisfação) + canais adicionais. Argumento: 'Todos os canais numa tela só, com o relatório que sua diretoria pede pronto.' Upgrade: virou call center de verdade ou precisa de ERP específico → Profissional.",
+        "PROFISSIONAL — call center completo multi-agente, integração com ERP de nicho (IXC/MK Solutions/Hubsoft/CV CRM), White Label/multi-tenant, Core Metrics. Oferta: Era Omni Profissional + Discador + integração customizada + Speech Analytics/transcrição. Argumento: 'Call center completo, amarrado ao seu ERP de verdade — uma central que fala a língua do seu sistema.'",
+        "Sinal de classificação: o que o cliente PEDIU na call, não o porte declarado — é o agrupamento mais confiável encontrado nas 29 calls.",
+        "Vs. OpaSuite (nível Profissional): vender INDEPENDÊNCIA do ERP (a ERA não é dona de ERP rival) além de paridade de feature."
+      ],
+      "limitacoes": [
+        "Preços e SKUs: consultar o catálogo GERA interno (não são públicos).",
+        "White Label/multi-tenant para revenda não tem SKU claro no catálogo — confirmar com o gestor antes de propor.",
+        "No nível Entrada, o discador NÃO é upsell: é parte do pacote mínimo viável (regra de valor mínimo do carrinho)."
+      ],
+      "palavras_chave": [
+        "escada",
+        "oferta",
+        "entrada",
+        "essencial",
+        "profissional",
+        "proposta",
+        "upsell",
+        "upgrade",
+        "discador",
+        "omni",
+        "white label",
+        "erp",
+        "nivel"
+      ]
+    },
+    {
+      "id": "concorrentes-campo",
+      "nome": "Concorrentes de campo — quem aparece nas calls e como responder",
+      "resumo": "Mapa real de concorrência extraído de 29 calls (2026-06/07). Três camadas: substituição direta (o que o cliente troca), módulo nativo do ERP do provedor, e fricções que parecem concorrente mas não são.",
+      "capacidades": [
+        "OpaSuite ('Opa!', 'Copa Suite') — concorrente nº1 no setor provedor; ligado ao IXC. Cliente compara preço direto ('se empatar ou ser mais barato, é quase certo que contrata'). Responder: independência de ERP + Core Metrics + prova social de outros provedores migrando.",
+        "Blip — mensageria usada por clientes (80% do atendimento num caso) e 2º termo mais buscado nos anúncios. Responder: Blip é só texto; ERA unifica voz + texto + relatórios numa plataforma.",
+        "BRDID — White Label próprio sem paridade de features (não registrava ligações não atendidas). Oportunidade de conquista de revendas insatisfeitas.",
+        "3CX — PABX legado sendo substituído ('tombar a base do 3CX'). Responder: migração assistida + portabilidade.",
+        "FreeSWITCH/'Fusion' — open-source de revendas técnicas: 'atende bem, mas fica devendo interface, não faz bilhetagem, relatórios horríveis'. Responder: interface + bilhetagem + relatórios prontos.",
+        "Leucotron — PABX/discador tradicional em substituição. Chat Clip — disparo WhatsApp puro, mais caro que voz+WhatsApp da ERA juntos. microSIP — softphone simples limitado pelo SO → Webfone no navegador.",
+        "IXC / MK Solutions / Hubsoft / CV CRM — NÃO são concorrentes: são os ERPs do cliente. A integração nomeada com eles é o que decide a venda tanto quanto preço."
+      ],
+      "limitacoes": [
+        "RD Station NÃO é concorrente — é o CRM do cliente; a limitação de plugin embutido é do RD Station, não da ERA. Resposta padrão: a integração traz histórico e atualização de dados, mas a 'tela única' depende do RD liberar.",
+        "Eleven Labs NÃO é concorrente — é o parceiro de IA de voz da ERA.",
+        "Frequências vêm de amostra qualitativa de 29 calls — sinal direcional, não estatística."
+      ],
+      "palavras_chave": [
+        "concorrente",
+        "opasuite",
+        "opa suite",
+        "blip",
+        "brdid",
+        "3cx",
+        "freeswitch",
+        "leucotron",
+        "chat clip",
+        "microsip",
+        "ixc",
+        "mk",
+        "hubsoft",
+        "rd station",
+        "comparacao",
+        "substituicao"
+      ]
+    },
+    {
+      "id": "objecoes-barreiras",
+      "nome": "Objeções e barreiras reais — como neutralizar",
+      "resumo": "Ranking real de barreiras de compra das 29 calls e a contra-resposta para cada uma. A barreira nº1 NÃO é preço.",
+      "capacidades": [
+        "1º Validação técnica de integração pendente (a mais frequente) — o cliente quer confiança de que a integração funciona ANTES de falar preço. Neutralizar: POC/demo técnica com o ERP dele nomeado; nunca 'vou verificar' genérico.",
+        "2º Aprovação de terceiro/diretoria — decisor ausente ou orçamento que sobe. Neutralizar: munir o contato com relatório/números prontos p/ a diretoria; agendar call com o co-decisor.",
+        "3º Preço não enviado — call termina sem números. Neutralizar: proposta na mesa ainda na call ou em 24h.",
+        "4º Descompasso de porte — solução percebida como grande demais. Neutralizar: começar pelo degrau de ENTRADA da escada e crescer.",
+        "5º Medo de migração multinível (White Label em camadas). Neutralizar: plano de migração faseado + validar gravação multi-tenant antes.",
+        "6º Medo de banimento WhatsApp (recorrente em cobrança/ativo). Neutralizar: API oficial + templates HSM aprovados na Meta.",
+        "Gatilho de awareness mais forte: prova social entre pares do mesmo ecossistema (outro provedor que migrou) — vale mais que anúncio.",
+        "Wow moment consistente: Core Metrics (análise por IA, nuvem de palavras, risco de cancelamento) — mostrar cedo na demo."
+      ],
+      "limitacoes": [
+        "Não prometer controle granular de gravação por ramal em multi-tenant (hoje não existe nativamente) — travou negócio de 600+ ramais.",
+        "Não prometer 'tela única' dentro do RD Station (limitação do RD).",
+        "Não vender funcionalidade fora do fluxo oficial de liberação sem validação técnica (risco de cancelamento citado pela própria equipe)."
+      ],
+      "palavras_chave": [
+        "objecao",
+        "barreira",
+        "preco",
+        "diretoria",
+        "poc",
+        "banimento",
+        "whatsapp",
+        "migracao",
+        "prova social",
+        "core metrics",
+        "demo",
+        "fechar",
+        "negociacao"
+      ]
     }
   ],
   "integracoes": [
-    "AdvGestor", "Absoluto", "Alta Rede", "Bentivi", "Cobmais", "eCob", "Finaz", "FreshSales", "Gerenet", "Interfocus", "Integrator (SGP)", "IXC", "Lógica Sistemas", "MK Solutions", "Movidesk", "Néctar", "Octadesk", "Ótimo Gestor", "PipeDrive", "Recovery", "Routerbox", "Sharp Spring", "Salesforce", "Siscobra", "Super Lógica", "Talent Web", "Top Sapp", "Ura Net", "Voalle / Synsuite", "Vanguard", "WebConsult", "Wedoo", "WGC", "Zendesk", "Zoho CRM/Desk", "Hubsoft", "Hubspot", "RD Station", "Microsoft Teams", "Moskit", "FlashAPP", "GSS", "TomTicket", "Senior", "Totvs", "Bitrix", "Kommo", "Guiar", "Imoview", "W2ibrasil", "CV", "SGU Suite (Unimed)", "RBX Soft"
+    "AdvGestor",
+    "Absoluto",
+    "Alta Rede",
+    "Bentivi",
+    "Cobmais",
+    "eCob",
+    "Finaz",
+    "FreshSales",
+    "Gerenet",
+    "Interfocus",
+    "Integrator (SGP)",
+    "IXC",
+    "Lógica Sistemas",
+    "MK Solutions",
+    "Movidesk",
+    "Néctar",
+    "Octadesk",
+    "Ótimo Gestor",
+    "PipeDrive",
+    "Recovery",
+    "Routerbox",
+    "Sharp Spring",
+    "Salesforce",
+    "Siscobra",
+    "Super Lógica",
+    "Talent Web",
+    "Top Sapp",
+    "Ura Net",
+    "Voalle / Synsuite",
+    "Vanguard",
+    "WebConsult",
+    "Wedoo",
+    "WGC",
+    "Zendesk",
+    "Zoho CRM/Desk",
+    "Hubsoft",
+    "Hubspot",
+    "RD Station",
+    "Microsoft Teams",
+    "Moskit",
+    "FlashAPP",
+    "GSS",
+    "TomTicket",
+    "Senior",
+    "Totvs",
+    "Bitrix",
+    "Kommo",
+    "Guiar",
+    "Imoview",
+    "W2ibrasil",
+    "CV",
+    "SGU Suite (Unimed)",
+    "RBX Soft"
   ],
   "fontes": [
-    "IA de voz.txt", "explicacaotomIA.txt", "explicacion.txt", "apresentatip.txt",
-    "treinamentocallcenter0omni.txt", "treinamentoomnimpd.txt", "treinamentowhitelabelcallcenter.txt",
-    "jam-video.txt", "jam-video (1).txt", "jam-video (2).txt", "Integrações Calliope.xlsx"
+    "IA de voz.txt",
+    "explicacaotomIA.txt",
+    "explicacion.txt",
+    "apresentatip.txt",
+    "treinamentocallcenter0omni.txt",
+    "treinamentoomnimpd.txt",
+    "treinamentowhitelabelcallcenter.txt",
+    "jam-video.txt",
+    "jam-video (1).txt",
+    "jam-video (2).txt",
+    "Integrações Calliope.xlsx"
   ]
 }
