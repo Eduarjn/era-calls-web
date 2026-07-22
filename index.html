@@ -181,6 +181,8 @@
   .proptot>div:nth-child(2) b{color:var(--navy)}
   .proptot b i{font-style:normal;font-size:12px;color:var(--muted)}
   .pobs{color:var(--muted);font-size:11.5px;margin:6px 0 0!important;line-height:1.45!important}
+  .pcomp{font-size:14px;color:var(--navy);margin:0 0 11px!important;line-height:1.5!important;font-weight:500}
+  .pflag{font-size:11.5px;color:var(--accent);background:var(--beige);border-radius:4px;padding:7px 10px;margin:11px 0 0!important;line-height:1.45!important}
 
   .spinner{width:52px;height:52px;border-radius:50%;border:4px solid var(--bar);border-top-color:var(--accent);animation:spin .9s linear infinite;margin:6px auto 16px}
   .checkmark{width:56px;height:56px;margin:6px auto 14px;border-radius:4px;background:rgba(68,123,190,.12);display:grid;place-items:center;font-size:28px;color:var(--blue);animation:pop .4s}
@@ -1095,14 +1097,17 @@ function propostaHtml(a){
     <td class="pn">${i.qtd}</td>
     <td class="pn">${brl(i.unit)}${i.cobranca==='mensal'?'<span class="pun">/mês</span>':'<span class="pun">único</span>'}</td>
     <td class="pn">${brl(i.subtotal)}</td></tr>`).join('');
-  return `<div class="rcard prop"><h3>💰 Produtos & investimento sugerido</h3>
+  const comp=(a.produto_recomendado&&a.produto_recomendado!=='null')?`<p class="pcomp">🎯 ${esc(a.produto_recomendado)}</p>`:'';
+  return `<div class="rcard prop"><h3>🛒 O que o cliente vai contratar</h3>
+    ${comp}
     <div class="propwrap"><table class="proptab">
-      <thead><tr><th>Item</th><th class="pn">Qtd</th><th class="pn">Unit.</th><th class="pn">Subtotal</th></tr></thead>
+      <thead><tr><th>Produto / serviço</th><th class="pn">Qtd</th><th class="pn">Unit.</th><th class="pn">Subtotal</th></tr></thead>
       <tbody>${rows}</tbody></table></div>
     <div class="proptot">
       <div><span>Mensal</span><b>${brl(p.total_mensal)}<i>/mês</i></b></div>
       ${p.total_unico?`<div><span>Ativação (única)</span><b>${brl(p.total_unico)}</b></div>`:''}
     </div>
+    <p class="pflag">⚠️ Valores ainda em revisão — confirme no GERA. O foco aqui é o <b>produto/serviço certo</b> para o que foi pedido na call.</p>
     ${(p.observacoes||[]).map(o=>`<p class="pobs">• ${esc(o)}</p>`).join('')}</div>`;
 }
 function abrir(id){
