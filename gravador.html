@@ -4,31 +4,43 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Gravador de Calls · ERA</title>
-<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style id="css">
-  :root{--bg:#faf9f5;--card:#fff;--txt:#1F2041;--ink:#3A3A57;--muted:#6B6B80;--line:#E6E5EE;
-    --accent:#4B3F72;--green:#417B5A;--red:#C0392B;--shadow:0 10px 30px rgba(31,32,65,.12);}
+  /* Identidade "placar técnico-editorial" — mesma paleta/tipos do painel */
+  :root{--bg:#F4F5F8;--card:#fff;--navy:#141B3C;--ink:#2A3050;--muted:#6A7186;--line:#DDE1EA;
+    --accent:#DF1F2D;--deep:#B11313;--blue:#447BBE;--shadow:0 1px 2px rgba(20,27,60,.05),0 8px 24px rgba(20,27,60,.06)}
   *{box-sizing:border-box}
-  body{margin:0;font-family:'Inter',system-ui,sans-serif;color:var(--ink);background:radial-gradient(900px 500px at 80% -10%,#F4E6DA,var(--bg) 60%);min-height:100vh}
-  h1,h2{font-family:'Quicksand',sans-serif;margin:0;color:var(--txt)}
-  .wrap{max-width:520px;margin:0 auto;padding:30px 20px}
-  .rec{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:var(--shadow)}
-  .logo{width:46px;height:46px;border-radius:13px;background:linear-gradient(135deg,#4B3F72,#417B5A);display:grid;place-items:center;font-size:22px;color:#fff;margin-bottom:10px}
-  label{font-size:13px;color:var(--muted);display:block;margin:12px 0 6px}
-  input{width:100%;padding:11px 13px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--txt);font-size:15px;font-family:'Inter'}
-  input:focus{outline:none;border-color:var(--accent)}
-  .btn{border:none;border-radius:11px;padding:11px 16px;font-weight:600;cursor:pointer;font-size:14px;font-family:'Inter';display:inline-flex;align-items:center;gap:8px;transition:transform .12s,opacity .2s}
-  .btn:hover{transform:translateY(-2px)} .btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
-  .btn-rec{background:var(--red);color:#fff;width:100%;justify-content:center;font-size:16px;padding:14px}
-  .btn-stop{background:var(--txt);color:#fff;width:100%;justify-content:center;font-size:16px;padding:14px}
-  .btn-soft{background:#EDEDF4;color:var(--txt)}
+  body{margin:0;font-family:'Space Grotesk',system-ui,sans-serif;color:var(--ink);background:var(--bg);
+    background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+    background-size:44px 44px;background-position:-1px -1px;min-height:100vh}
+  h1{margin:0;color:var(--navy);letter-spacing:-.01em}
+  .wrap{max-width:520px;margin:0 auto;padding:34px 20px}
+  .rec{background:var(--card);border:1px solid var(--line);border-top:3px solid var(--accent);border-radius:6px;padding:22px;box-shadow:var(--shadow)}
+  .logo{width:44px;height:44px;border-radius:6px;background:var(--navy);display:grid;place-items:center;font-size:20px;color:#fff;margin-bottom:12px}
+  label{font-size:11px;color:var(--muted);display:block;margin:14px 0 6px;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:.08em}
+  input{width:100%;padding:12px 14px;border-radius:4px;border:1px solid var(--line);background:#fff;color:var(--navy);font-size:15px;font-family:'Space Grotesk',sans-serif}
+  input:focus{outline:none;border-color:var(--blue)}
+  .btn{border:none;border-radius:4px;padding:11px 16px;font-weight:600;cursor:pointer;font-size:14px;font-family:'Space Grotesk',sans-serif;display:inline-flex;align-items:center;gap:8px;transition:transform .1s,opacity .2s}
+  .btn:hover{transform:translateY(-1px)} .btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+  .btn-rec{background:var(--accent);color:#fff;width:100%;justify-content:center;font-size:16px;padding:14px}
+  .btn-stop{background:var(--navy);color:#fff;width:100%;justify-content:center;font-size:16px;padding:14px}
+  .btn-soft{background:transparent;border:1px solid var(--line);color:var(--navy)}
+  .btn-retry{background:var(--deep);color:#fff;width:100%;justify-content:center;margin-top:10px}
   .row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
-  .timer{font-family:'Quicksand';font-size:40px;font-weight:700;color:var(--txt);text-align:center;margin:10px 0 4px}
-  .dot{display:inline-block;width:11px;height:11px;border-radius:50%;background:var(--red);margin-right:7px;animation:pulse 1s infinite}
+  .timer{font-family:'IBM Plex Mono',monospace;font-size:40px;font-weight:600;color:var(--navy);text-align:center;margin:12px 0 4px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+  .dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--accent);margin-right:7px;animation:pulse 1s infinite}
   .status{font-size:13px;color:var(--muted);text-align:center;min-height:18px}
-  .ok{color:var(--green)} .erro{color:var(--red)}
-  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
-  .pip-mode .wrap{padding:10px} .pip-mode .logo,.pip-mode .desc,.pip-mode h1{display:none}
+  .ok{color:var(--blue)} .erro{color:var(--deep)}
+  .desc{color:var(--muted);font-size:13px;margin:4px 0 6px}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  /* ---- modo flutuante (só o ícone + timer) ---- */
+  .mini{height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;cursor:pointer;background:var(--bg);user-select:none}
+  .miniBtn{width:62px;height:62px;border-radius:50%;border:2px solid var(--navy);background:#fff;display:grid;place-items:center;font-size:26px;transition:transform .12s}
+  .mini:hover .miniBtn{transform:scale(1.07)}
+  .mini.gravando .miniBtn{border-color:var(--accent);box-shadow:0 0 0 5px rgba(223,31,45,.15)}
+  .mini.gravando .miniBtn span{animation:pulse 1.2s infinite}
+  .miniTimer{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;color:var(--navy);font-variant-numeric:tabular-nums}
+  .miniHint{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:center;padding:0 6px}
 </style>
 </head>
 <body>
@@ -36,10 +48,10 @@
   <div class="rec" id="rec">
     <div class="logo">🎙️</div>
     <h1 style="font-size:24px">Gravador de Calls</h1>
-    <p class="desc" style="color:var(--muted);font-size:13px;margin:4px 0 6px">Grava você + cliente e envia direto para análise.</p>
+    <p class="desc">Grava você + cliente (só áudio) e envia direto para análise.</p>
 
     <label>Cliente</label>
-    <input id="cliente" placeholder="Nome do cliente">
+    <input id="cliente" placeholder="Nome do cliente — Enter já inicia a gravação" autocomplete="off">
 
     <div class="timer" id="timer">00:00</div>
     <div class="status" id="status">Carregando…</div>
@@ -47,13 +59,15 @@
     <div style="margin-top:12px">
       <button class="btn btn-rec" id="btnRec" onclick="toggle()" disabled>🔴 Gravar</button>
     </div>
+    <button class="btn btn-retry" id="btnReenviar" onclick="reenviar()" style="display:none">🔁 Tentar reenviar a última gravação</button>
     <div class="row">
-      <button class="btn btn-soft" id="btnPip" onclick="flutuar()" style="flex:1">📌 Flutuar</button>
+      <button class="btn btn-soft" id="btnPip" onclick="flutuar()" style="flex:1" title="Vira um ícone flutuante sobre as outras janelas; clique no ícone para voltar a esta tela">📌 Flutuar</button>
       <button class="btn btn-soft" id="btnRepro" onclick="reprocessar()" style="flex:1" title="Reenvia para análise um áudio que já está salvo na nuvem (ex.: uma call cuja análise falhou)">🔁 Reprocessar</button>
     </div>
-    <p class="desc" style="color:var(--muted);font-size:11.5px;margin:8px 2px 0">
-      💡 "Reprocessar" recupera uma gravação salva cuja análise falhou. Digite o nome no campo Cliente
-      para escolher a certa, ou deixe vazio para pegar a mais recente.
+    <p class="desc" style="font-size:11.5px;margin:8px 2px 0">
+      💡 Ao gravar, a janela vira um ícone flutuante — clique nele para voltar aqui.
+      "Reprocessar" recupera uma gravação salva cuja análise falhou (digite o nome no campo Cliente
+      para escolher a certa, ou deixe vazio para pegar a mais recente).
     </p>
   </div>
 </div>
@@ -66,25 +80,37 @@ const SUPABASE_KEY = "sb_publishable_9zXFMPKbxrrDM8t5ecjY5Q_p4wCipFB";
 const FUNC = "quick-responder";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let USER=null, mediaRec=null, chunks=[], t0=0, tick=null, gravando=false, pipWin=null;
+let ultimoMp3=null, ultimoPath=null, ultimoCliente=null, ultimaDur=0;
 
-function $(id){ return (pipWin?pipWin.document:document).getElementById(id); }
+function $(id){ return document.getElementById(id); }
 function setStatus(t,cls){ const s=$('status'); if(s){ s.innerHTML=t; s.className='status '+(cls||''); } }
+function fmt(s){ return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); }
 
 async function init(){
+  const salvo=localStorage.getItem('gravador_cliente'); if(salvo && !$('cliente').value) $('cliente').value=salvo;
+  $('cliente').addEventListener('input',()=>localStorage.setItem('gravador_cliente',$('cliente').value));
+  $('cliente').addEventListener('keydown',e=>{ if(e.key==='Enter'&&!gravando&&!$('btnRec').disabled) iniciar(); });
   const { data:{ session } } = await sb.auth.getSession();
   if(session){ USER=session.user; $('btnRec').disabled=false; setStatus('Pronto para gravar.'); }
   else { setStatus('Entre no painel primeiro (aba principal) e reabra o gravador.', 'erro'); }
 }
+window.addEventListener('beforeunload',e=>{ if(gravando){ e.preventDefault(); e.returnValue=''; } });
 
 async function toggle(){ gravando?parar():iniciar(); }
 
 async function iniciar(){
   if(!USER){ setStatus('Faça login no painel primeiro.','erro'); return; }
   try{
-    setStatus('Selecione a tela/janela da call e marque "compartilhar áudio".');
-    const disp=await navigator.mediaDevices.getDisplayMedia({video:true,audio:true});
+    setStatus('Selecione a TELA INTEIRA e marque "Compartilhar áudio do sistema".');
+    // Só o ÁUDIO é gravado — o vídeo serve apenas para o seletor do navegador e para detectar
+    // quando você para de compartilhar. Nada de mp4: menos processamento, upload menor.
+    const disp=await navigator.mediaDevices.getDisplayMedia({
+      video:true,
+      audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false},
+      systemAudio:'include', selfBrowserSurface:'exclude', monitorTypeSurfaces:'include'
+    });
     if(!disp.getAudioTracks().length){ setStatus('Não veio áudio do sistema. No navegador, marque "compartilhar áudio".','erro'); disp.getTracks().forEach(t=>t.stop()); return; }
-    const mic=await navigator.mediaDevices.getUserMedia({audio:true});
+    const mic=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true}});
     const ac=new AudioContext(); const dest=ac.createMediaStreamDestination();
     ac.createMediaStreamSource(new MediaStream(disp.getAudioTracks())).connect(dest);
     ac.createMediaStreamSource(mic).connect(dest);
@@ -95,13 +121,20 @@ async function iniciar(){
     mediaRec.start();
     gravando=true; t0=Date.now(); tick=setInterval(timerTick,500);
     $('btnRec').textContent='⏹ Parar'; $('btnRec').className='btn btn-stop';
+    $('btnReenviar').style.display='none';
     setStatus('<span class="dot"></span> Gravando…');
+    syncMini();
+    // Vira ícone flutuante automaticamente para você voltar à reunião.
+    if(!pipWin){ try{ await flutuar(); }catch(_){ /* sem gesto/suporte: use o botão Flutuar */ } }
   }catch(e){ setStatus('Não consegui iniciar: '+(e.message||e),'erro'); }
 }
 function parar(){ if(!mediaRec) return; gravando=false; clearInterval(tick);
-  $('btnRec').textContent='🔴 Gravar'; $('btnRec').className='btn btn-rec'; mediaRec.stop(); }
+  ultimaDur=Math.round((Date.now()-t0)/1000);
+  $('btnRec').textContent='🔴 Gravar'; $('btnRec').className='btn btn-rec';
+  syncMini(); mediaRec.stop(); }
 function timerTick(){ const s=Math.floor((Date.now()-t0)/1000);
-  const el=$('timer'); if(el) el.textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); }
+  const el=$('timer'); if(el) el.textContent=fmt(s);
+  if(pipWin){ const m=pipWin.document.getElementById('miniTimer'); if(m) m.textContent=fmt(s); } }
 
 async function toMp3(blob){
   const buf=await blob.arrayBuffer();
@@ -125,20 +158,40 @@ async function enviar(){
     const webm=new Blob(chunks,{type:'audio/webm'});
     const mp3=await toMp3(webm);
     if(mp3.size>25*1024*1024){ setStatus('Áudio muito grande (>25MB). Tente uma call mais curta.','erro'); return; }
+    ultimoMp3=mp3; ultimoPath=null; ultimoCliente=$('cliente').value||null;
+    await subirEAnalisar();
+  }catch(e){ falhaEnvio(e); }
+}
+
+// Sobe (se ainda não subiu) e chama a análise. Guardar o path evita duplicar upload no reenvio.
+async function subirEAnalisar(){
+  if(!ultimoPath){
     setStatus('Enviando para a nuvem…');
-    const cli=($('cliente').value||'call').replace(/[^\w.\-]+/g,'_');
+    const cli=(ultimoCliente||'call').replace(/[^\w.\-]+/g,'_');
     const path=`${USER.id}/${Date.now()}_${cli}.mp3`;
-    const up=await sb.storage.from('audios').upload(path,mp3,{contentType:'audio/mpeg'});
+    const up=await sb.storage.from('audios').upload(path,ultimoMp3,{contentType:'audio/mpeg'});
     if(up.error) throw up.error;
-    setStatus('Transcrevendo e analisando…');
-    const {data,error}=await sb.functions.invoke(FUNC,{body:{audio_path:path,cliente:($('cliente').value||null)}});
-    if(error){ let m=error.message; try{const c=await error.context.json();m=c.error||m}catch(_){ } throw new Error(m); }
-    if(data&&data.error) throw new Error(data.error);
-    if(data&&data.status==='parcial') setStatus('Salvo! ✓ A transcrição está no painel. A análise não completou (limite do Groq) — abra a call e clique em "Separar falas"/reprocesse mais tarde.','ok');
-    else setStatus('Analisado! ✓ Veja no painel.','ok');
-    const el=$('timer'); if(el) el.textContent='00:00';
-    const c=$('cliente'); if(c) c.value='';
-  }catch(e){ setStatus('Erro: '+(e.message||e),'erro'); }
+    ultimoPath=path;
+  }
+  setStatus('Transcrevendo e analisando…');
+  const {data,error}=await sb.functions.invoke(FUNC,{body:{audio_path:ultimoPath,cliente:ultimoCliente,duracao_seg:ultimaDur||null}});
+  if(error){ let m=error.message; try{const c=await error.context.json();m=c.error||m}catch(_){ } throw new Error(m); }
+  if(data&&data.error) throw new Error(data.error);
+  if(data&&data.status==='parcial') setStatus('Salvo! ✓ A transcrição está no painel. A análise não completou (limite do Groq) — abra a call e clique em "Separar falas"/reprocesse mais tarde.','ok');
+  else setStatus('Analisado! ✓ Veja no painel.','ok');
+  ultimoMp3=null; ultimoPath=null; $('btnReenviar').style.display='none';
+  const el=$('timer'); if(el) el.textContent='00:00';
+  const c=$('cliente'); if(c) c.value=''; localStorage.removeItem('gravador_cliente');
+}
+
+function falhaEnvio(e){
+  setStatus('Erro: '+(e.message||e)+' — a gravação está guardada, use o botão abaixo.','erro');
+  if(ultimoMp3||ultimoPath) $('btnReenviar').style.display='inline-flex';
+}
+async function reenviar(){
+  if(!ultimoMp3&&!ultimoPath){ setStatus('Nenhuma gravação pendente.','erro'); return; }
+  const b=$('btnReenviar'); b.disabled=true;
+  try{ await subirEAnalisar(); }catch(e){ falhaEnvio(e); } finally{ b.disabled=false; }
 }
 
 // Recupera uma gravação já salva no Storage cuja análise falhou e a reenvia para a função.
@@ -166,14 +219,27 @@ async function reprocessar(){
   finally{ if(btn) btn.disabled=false; }
 }
 
+// ---- Flutuar: só o ícone + timer. Clique no ícone = volta para esta tela. ----
 async function flutuar(){
   if(!('documentPictureInPicture' in window)){ setStatus('Janela flutuante só no Chrome/Edge (ou no app).','erro'); return; }
   if(pipWin){ pipWin.close(); return; }
-  pipWin=await documentPictureInPicture.requestWindow({width:300,height:230});
-  pipWin.document.head.appendChild(document.getElementById('css').cloneNode(true));
-  pipWin.document.body.classList.add('pip-mode');
-  pipWin.document.body.appendChild(document.getElementById('rec'));
-  pipWin.addEventListener('pagehide',()=>{ document.getElementById('host').appendChild(document.getElementById('rec')); pipWin=null; });
+  pipWin=await documentPictureInPicture.requestWindow({width:150,height:172});
+  const d=pipWin.document;
+  document.querySelectorAll('link[rel="stylesheet"]').forEach(l=>d.head.appendChild(l.cloneNode(true)));
+  d.head.appendChild(document.getElementById('css').cloneNode(true));
+  d.body.style.margin='0';
+  d.body.innerHTML='<div class="mini" id="mini" title="Abrir o gravador">'
+    +'<div class="miniBtn"><span>🎙️</span></div>'
+    +'<div class="miniTimer" id="miniTimer">'+($('timer')?$('timer').textContent:'00:00')+'</div>'
+    +'<div class="miniHint" id="miniHint"></div></div>';
+  d.getElementById('mini').addEventListener('click',()=>{ try{window.focus()}catch(_){ } pipWin.close(); });
+  pipWin.addEventListener('pagehide',()=>{ pipWin=null; });
+  syncMini();
+}
+function syncMini(){
+  if(!pipWin) return; const d=pipWin.document, m=d.getElementById('mini'); if(!m) return;
+  m.classList.toggle('gravando',gravando);
+  const h=d.getElementById('miniHint'); if(h) h.textContent=gravando?'gravando · clique p/ abrir':'clique p/ abrir o gravador';
 }
 
 init();
