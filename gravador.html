@@ -136,17 +136,26 @@ function timerTick(){ const s=Math.floor((Date.now()-t0)/1000);
   const el=$('timer'); if(el) el.textContent=fmt(s);
   if(pipWin){ const m=pipWin.document.getElementById('miniTimer'); if(m) m.textContent=fmt(s); } }
 
-async function toMp3(blob){
+// Bitrate ADAPTATIVO por duração: calls curtas ficam em 64 kbps (qualidade cheia);
+// calls longas caem o bitrate p/ caber com folga sob 25 MB (limite do Groq).
+// alvo ~23 MB → kbps = 23MB*8 / segundos, entre 24 e 64. 61 min → ~51 kbps (~23 MB); ~2h ainda cabe.
+// Fala em 16 kHz mono a 24-32 kbps continua bem inteligível para transcrição.
+function bitratePara(durSec){
+  const kbps=Math.floor(23*1024*8/Math.max(1,durSec));
+  return Math.max(24, Math.min(64, kbps));
+}
+async function toMp3(blob, forcarKbps){
   const buf=await blob.arrayBuffer();
   const ac=new (window.AudioContext||window.webkitAudioContext)();
   const decoded=await ac.decodeAudioData(buf);
   const rate=16000;
+  const kbps=forcarKbps||bitratePara(decoded.duration||1);
   const off=new OfflineAudioContext(1,Math.ceil(decoded.duration*rate),rate);
   const src=off.createBufferSource(); src.buffer=decoded; src.connect(off.destination); src.start();
   const rendered=await off.startRendering();
   const ch=rendered.getChannelData(0); const int16=new Int16Array(ch.length);
   for(let i=0;i<ch.length;i++){const v=Math.max(-1,Math.min(1,ch[i]));int16[i]=v<0?v*32768:v*32767;}
-  const enc=new lamejs.Mp3Encoder(1,rate,64); const out=[]; const bs=1152;
+  const enc=new lamejs.Mp3Encoder(1,rate,kbps); const out=[]; const bs=1152;
   for(let i=0;i<int16.length;i+=bs){const m=enc.encodeBuffer(int16.subarray(i,i+bs));if(m.length)out.push(m);}
   const e=enc.flush(); if(e.length)out.push(e);
   return new Blob(out,{type:'audio/mpeg'});
@@ -154,10 +163,20 @@ async function toMp3(blob){
 
 async function enviar(){
   try{
-    setStatus('Preparando áudio…');
+    const mins=Math.round((ultimaDur||0)/60);
+    setStatus('Preparando áudio…'+(mins>=30?' (call longa — ajustando a qualidade p/ caber)':''));
     const webm=new Blob(chunks,{type:'audio/webm'});
-    const mp3=await toMp3(webm);
-    if(mp3.size>25*1024*1024){ setStatus('Áudio muito grande (>25MB). Tente uma call mais curta.','erro'); return; }
+    let mp3=await toMp3(webm);
+    // Rede de segurança p/ calls muito longas: se ainda passar de 25MB, recomprime no mínimo (24 kbps).
+    if(mp3.size>25*1024*1024){
+      setStatus('Call longa — recomprimindo no mínimo p/ caber…');
+      mp3=await toMp3(webm, 24);
+    }
+    if(mp3.size>25*1024*1024){
+      setStatus('Áudio ainda acima de 25MB ('+(mp3.size/1048576).toFixed(1)+'MB) mesmo no mínimo — a call é longa demais (>~2h30). Divida em duas partes.','erro');
+      if(chunks.length) $('btnReenviar').style.display='none';
+      return;
+    }
     ultimoMp3=mp3; ultimoPath=null; ultimoCliente=$('cliente').value||null;
     await subirEAnalisar();
   }catch(e){ falhaEnvio(e); }
