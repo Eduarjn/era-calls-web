@@ -129,7 +129,7 @@
 
   .overlay{position:fixed;inset:0;background:rgba(14,19,34,.55);display:none;align-items:center;justify-content:center;z-index:50;padding:20px}
   .overlay.show{display:flex;animation:fade .2s}
-  .modal{background:var(--modal);border:1px solid var(--line);border-top:3px solid var(--accent);border-radius:6px;width:min(780px,96vw);max-height:90vh;overflow:auto;box-shadow:var(--shadow);animation:pop .28s cubic-bezier(.2,.8,.2,1.05)}
+  .modal{background:var(--modal);border:1px solid var(--line);border-top:3px solid var(--accent);border-radius:6px;width:min(940px,96vw);max-height:90vh;overflow:auto;box-shadow:var(--shadow);animation:pop .28s cubic-bezier(.2,.8,.2,1.05)}
   .modal .head{display:flex;justify-content:space-between;align-items:flex-start;padding:20px 24px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--modal);z-index:2}
   .x{background:none;border:none;color:var(--muted);font-size:24px;cursor:pointer} .x:hover{color:var(--accent)}
   .body{padding:22px 24px}
@@ -158,6 +158,29 @@
   .qual>div{background:var(--soft3);border:1px solid var(--line);border-radius:4px;padding:8px 11px}
   .qual b{display:block;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px;font-family:'IBM Plex Mono',monospace}
   .qual span{font-size:14px;color:var(--ink)}
+  /* ---- detalhe da call: KPIs, grade 2 colunas e proposta sugerida ---- */
+  .kpirow{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:8px;margin-bottom:13px}
+  .kpi{background:var(--soft3);border:1px solid var(--line);border-radius:4px;padding:9px 8px;text-align:center}
+  .kpi .v{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;color:var(--navy);text-transform:capitalize;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .kpi .l{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;margin-top:3px}
+  .detgrid{columns:2 300px;column-gap:13px}
+  .detgrid .rcard{break-inside:avoid}
+  .prop{border-left:3px solid var(--accent);background:var(--soft)}
+  .propwrap{overflow-x:auto}
+  .proptab{width:100%;border-collapse:collapse;font-size:13.5px}
+  .proptab th{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+  .proptab th.pn{text-align:right}
+  .proptab td{padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+  .proptab .pn{text-align:right;font-family:'IBM Plex Mono',monospace;white-space:nowrap;font-variant-numeric:tabular-nums}
+  .pun{color:var(--muted);font-size:10px;margin-left:2px}
+  .pmot{color:var(--muted);font-size:11.5px;margin-top:2px}
+  .proptot{display:flex;gap:22px;flex-wrap:wrap;margin-top:12px}
+  .proptot>div{display:flex;flex-direction:column}
+  .proptot span{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+  .proptot b{font-family:'IBM Plex Mono',monospace;font-size:21px;color:var(--accent);letter-spacing:-.02em}
+  .proptot>div:nth-child(2) b{color:var(--navy)}
+  .proptot b i{font-style:normal;font-size:12px;color:var(--muted)}
+  .pobs{color:var(--muted);font-size:11.5px;margin:6px 0 0!important;line-height:1.45!important}
 
   .spinner{width:52px;height:52px;border-radius:50%;border:4px solid var(--bar);border-top-color:var(--accent);animation:spin .9s linear infinite;margin:6px auto 16px}
   .checkmark{width:56px;height:56px;margin:6px auto 14px;border-radius:4px;background:rgba(68,123,190,.12);display:grid;place-items:center;font-size:28px;color:var(--blue);animation:pop .4s}
@@ -1065,6 +1088,23 @@ function renderUsuarios(){
     ? `<div style="overflow:auto"><table class="tbl"><thead><tr><th>Nome</th><th>E-mail</th><th>Papel</th></tr></thead><tbody>${arr.map(u=>`<tr><td>${esc(u.nome||'—')}</td><td>${esc(u.email||'—')}</td><td>${esc(u.papel||'—')}</td></tr>`).join('')}</tbody></table></div>`
     : '<p style="color:var(--muted)">Nenhum usuário.</p>';
 }
+const brl=n=>'R$ '+Number(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+function propostaHtml(a){
+  const p=a&&a.proposta_sugerida; if(!p||!Array.isArray(p.itens)||!p.itens.length) return '';
+  const rows=p.itens.map(i=>`<tr><td>${esc(i.nome)}${i.motivo?`<div class="pmot">${esc(i.motivo)}</div>`:''}</td>
+    <td class="pn">${i.qtd}</td>
+    <td class="pn">${brl(i.unit)}${i.cobranca==='mensal'?'<span class="pun">/mês</span>':'<span class="pun">único</span>'}</td>
+    <td class="pn">${brl(i.subtotal)}</td></tr>`).join('');
+  return `<div class="rcard prop"><h3>💰 Produtos & investimento sugerido</h3>
+    <div class="propwrap"><table class="proptab">
+      <thead><tr><th>Item</th><th class="pn">Qtd</th><th class="pn">Unit.</th><th class="pn">Subtotal</th></tr></thead>
+      <tbody>${rows}</tbody></table></div>
+    <div class="proptot">
+      <div><span>Mensal</span><b>${brl(p.total_mensal)}<i>/mês</i></b></div>
+      ${p.total_unico?`<div><span>Ativação (única)</span><b>${brl(p.total_unico)}</b></div>`:''}
+    </div>
+    ${(p.observacoes||[]).map(o=>`<p class="pobs">• ${esc(o)}</p>`).join('')}</div>`;
+}
 function abrir(id){
   const c=CALLS.find(x=>x.id===id); if(!c)return; CUR=c;
   document.getElementById('detTitle').textContent=c.cliente||'Cliente não identificado';
@@ -1078,20 +1118,31 @@ function abrir(id){
       <div><b>Autoridade</b><span>${esc(q.autoridade||'—')}</span></div>
       <div><b>Necessidade</b><span>${esc(q.necessidade||'—')}</span></div>
       <div><b>Prazo</b><span>${esc(q.prazo||'—')}</span></div></div></div>`:'';
+  const kpi=(l,v)=>`<div class="kpi"><div class="v">${v}</div><div class="l">${l}</div></div>`;
+  const kpis=`<div class="kpirow">
+    ${kpi('Score',a.score_oportunidade!=null?esc(a.score_oportunidade):'—')}
+    ${kpi('Sentimento',esc(c.sentimento||a.sentimento||'—'))}
+    ${kpi('Resultado',esc(c.resultado||'andamento'))}
+    ${kpi('Escada',(a.nivel_escada&&a.nivel_escada!=='null')?esc(a.nivel_escada):'—')}
+    ${kpi('Segmento',esc(segOf(c)||'—'))}
+    ${kpi('Duração',c.duracao_seg?Math.round(c.duracao_seg/60)+' min':'—')}
+  </div>`;
   document.getElementById('paneA').innerHTML=`
-    <div class="rcard"><div class="rcard-head"><h3 style="margin:0">👥 Quem participou</h3>
+    <div class="rcard"><div class="rcard-head"><h3 style="margin:0">👥 Participantes & resultado</h3>
       <span style="display:flex;gap:6px">
-        <button class="btn-audio" onclick="reanalisarCall('${c.id}',this)" title="Re-roda a IA sobre a transcrição (atualiza segmento e a análise)">🔄 Reanalisar</button>
+        <button class="btn-audio" onclick="reanalisarCall('${c.id}',this)" title="Re-roda a IA sobre a transcrição (atualiza segmento, análise e proposta)">🔄 Reanalisar</button>
         <button class="btn-audio" onclick="copiarHandoff('${c.id}',this)">📋 Copiar para CRM</button></span></div>
-      <div class="chips">${PARTICIPANTES.map(p=>`<span class="chip ${part.includes(p)?'on':''}" onclick="toggleP('${c.id}','${p}')">${esc(p)}</span>`).join('')}</div></div>
-    <div class="rcard"><h3>🏆 Resultado da oportunidade</h3>
-      <div class="chips" id="resChips">${resultadoChips(c)}</div></div>
+      <div class="chips">${PARTICIPANTES.map(p=>`<span class="chip ${part.includes(p)?'on':''}" onclick="toggleP('${c.id}','${p}')">${esc(p)}</span>`).join('')}</div>
+      <div class="chips" id="resChips" style="margin-top:9px">${resultadoChips(c)}</div></div>
+    ${kpis}
     <div class="rcard"><h3>📌 Resumo</h3><p>${esc(c.resumo||a.resumo||'—')}</p></div>
+    ${propostaHtml(a)}
     ${(a.nivel_escada&&a.nivel_escada!=='null')||a.produto_recomendado?`<div class="rcard"><h3>🪜 Oferta recomendada (escada ERA)</h3><p style="margin-bottom:6px">${escadaBadge(c)}</p><p>${esc(a.produto_recomendado||'—')}</p></div>`:''}
+    <div class="detgrid">
     ${qHtml}
     ${card('👥','Stakeholders / decisores',a.stakeholders)}
-    ${card('🗺️','Ambiente atual (stack & volumes)',a.ambiente_atual)}
     ${card('🩺','Dores & desafios',a.dores)}
+    ${card('🗺️','Ambiente atual (stack & volumes)',a.ambiente_atual)}
     ${card('🧩','Requisitos técnicos',a.requisitos_tecnicos)}
     ${card('🎬','Casos de uso',a.casos_de_uso)}
     ${card('🔌','Integrações necessárias',a.integracoes_necessarias)}
@@ -1104,7 +1155,8 @@ function abrir(id){
     ${card('🎯','O que o cliente precisa',a.necessidades)}
     ${card('💡','Como a ferramenta ajuda',a.como_a_ferramenta_ajuda)}
     ${card('📈','Melhorias do vendedor',a.pontos_melhoria_vendedor)}
-    ${card('📣','Ganchos de marketing',a.ganchos_marketing)}`;
+    ${card('📣','Ganchos de marketing',a.ganchos_marketing)}
+    </div>`;
   document.getElementById('paneT').innerHTML=renderTranscricao(c);
   montarAudio(c);
   tab('a'); document.getElementById('ovDet').classList.add('show');
@@ -1119,6 +1171,12 @@ function copiarHandoff(id,btn){
   txt+='RESUMO: '+(c.resumo||a.resumo||'—')+'\n';
   if((a.nivel_escada&&a.nivel_escada!=='null')||a.produto_recomendado)
     txt+='OFERTA RECOMENDADA: '+(a.nivel_escada?('['+a.nivel_escada+'] '):'')+(a.produto_recomendado||'—')+'\n';
+  const pp=a.proposta_sugerida;
+  if(pp&&Array.isArray(pp.itens)&&pp.itens.length){
+    txt+='\nPROPOSTA SUGERIDA (estimativa da IA — validar no GERA):\n';
+    pp.itens.forEach(i=>{ txt+='  - '+i.qtd+'x '+i.nome+' — '+brl(i.unit)+(i.cobranca==='mensal'?'/mês':' (único)')+' = '+brl(i.subtotal)+'\n'; });
+    txt+='  TOTAL MENSAL: '+brl(pp.total_mensal)+(pp.total_unico?('  |  ATIVAÇÃO (única): '+brl(pp.total_unico)):'')+'\n';
+  }
   if(q.orcamento||q.autoridade||q.necessidade||q.prazo)
     txt+='QUALIFICAÇÃO: orçamento: '+(q.orcamento||'—')+' | autoridade: '+(q.autoridade||'—')+' | necessidade: '+(q.necessidade||'—')+' | prazo: '+(q.prazo||'—')+'\n';
   txt+='\n';
