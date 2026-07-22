@@ -183,6 +183,12 @@
   .prop .pobs{color:var(--muted);font-size:11.5px;margin:6px 0 0!important;line-height:1.45!important}
   .prop .pcomp{font-size:14px;color:var(--navy);margin:0 0 11px!important;line-height:1.5!important;font-weight:500}
   .prop .pflag{font-size:11.5px;color:var(--accent);background:var(--beige);border-radius:4px;padding:7px 10px;margin:11px 0 0!important;line-height:1.45!important}
+  .ctrlrow{display:flex;align-items:center;gap:10px;margin-top:9px;flex-wrap:wrap}
+  .ctrllbl{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);min-width:74px}
+  .ctrlrow .chips{margin:0}
+  .tipobadge{font-family:'IBM Plex Mono',monospace;font-size:10.5px;padding:3px 8px;border-radius:3px;margin-left:10px;letter-spacing:.02em;vertical-align:middle}
+  .tipobadge.ativacao{background:var(--beige);color:var(--accent)}
+  .tipobadge.aditivo{background:var(--soft2);color:var(--blue)}
 
   .spinner{width:52px;height:52px;border-radius:50%;border:4px solid var(--bar);border-top-color:var(--accent);animation:spin .9s linear infinite;margin:6px auto 16px}
   .checkmark{width:56px;height:56px;margin:6px auto 14px;border-radius:4px;background:rgba(68,123,190,.12);display:grid;place-items:center;font-size:28px;color:var(--blue);animation:pop .4s}
@@ -965,6 +971,27 @@ async function setResultado(id,v){
   if(error){ c.resultado=antigo; if(box) box.innerHTML=resultadoChips(c); alert('Erro ao salvar resultado: '+error.message); return; }
   if(CUR&&CUR.id===id) CUR.resultado=v;
 }
+// Ativação (contrato novo) × Aditivo (adição a contrato existente). Muda a proposta (taxa/DID).
+const TIPOS=[['ativacao','🆕 Ativação'],['aditivo','➕ Aditivo']];
+function tipoDe(c){ const a=c.analise||{}; return a.tipo_negociacao==='aditivo'?'aditivo':(a.tipo_negociacao==='ativacao'?'ativacao':''); }
+function tipoTxt(a){ return (a&&a.tipo_negociacao==='aditivo')?'Aditivo':((a&&a.tipo_negociacao==='ativacao')?'Ativação':'—'); }
+function tipoChips(c){
+  const atual=tipoDe(c);
+  return TIPOS.map(([v,lbl])=>`<span class="chip ${atual===v?'on':''}" onclick="setTipo('${c.id}','${v}')">${lbl}</span>`).join('');
+}
+async function setTipo(id,v){
+  const c=CALLS.find(x=>x.id===id); if(!c) return;
+  c.analise=c.analise||{}; const antigo=c.analise.tipo_negociacao; c.analise.tipo_negociacao=v;
+  const box=document.getElementById('tipoChips'); if(box) box.innerHTML=tipoChips(c);
+  try{
+    const {data,error}=await sb.functions.invoke(FUNC,{body:{action:'definir_tipo',call_id:id,tipo:v}});
+    if(error){ let m=error.message; try{const cx=await error.context.json();m=cx.error||m}catch(_){ } throw new Error(m); }
+    if(data&&data.error) throw new Error(data.error);
+    c.analise=data.analise||c.analise;
+    if(CUR&&CUR.id===id) CUR=c;
+    abrir(id);   // re-renderiza: a proposta muda (taxa de instalação / DID entram ou saem)
+  }catch(e){ c.analise.tipo_negociacao=antigo; if(box) box.innerHTML=tipoChips(c); alert('Erro ao definir tipo: '+(e.message||e)); }
+}
 async function renomearId(id){
   const c=CALLS.find(x=>x.id===id); if(!c) return;
   const novo=prompt('Novo nome da call (cliente):', c.cliente||'');
@@ -1098,7 +1125,8 @@ function propostaHtml(a){
     <td class="pn">${brl(i.unit)}${i.cobranca==='mensal'?'<span class="pun">/mês</span>':'<span class="pun">único</span>'}</td>
     <td class="pn">${brl(i.subtotal)}</td></tr>`).join('');
   const comp=(a.produto_recomendado&&a.produto_recomendado!=='null')?`<p class="pcomp">🎯 ${esc(a.produto_recomendado)}</p>`:'';
-  return `<div class="rcard prop"><h3>🛒 O que o cliente vai contratar</h3>
+  const badge=p.tipo?`<span class="tipobadge ${p.tipo}">${p.tipo==='aditivo'?'➕ Aditivo':'🆕 Ativação'}</span>`:'';
+  return `<div class="rcard prop"><h3>🛒 O que o cliente vai contratar${badge}</h3>
     ${comp}
     <div class="propwrap"><table class="proptab">
       <thead><tr><th>Produto / serviço</th><th class="pn">Qtd</th><th class="pn">Unit.</th><th class="pn">Subtotal</th></tr></thead>
@@ -1128,17 +1156,19 @@ function abrir(id){
     ${kpi('Score',a.score_oportunidade!=null?esc(a.score_oportunidade):'—')}
     ${kpi('Sentimento',esc(c.sentimento||a.sentimento||'—'))}
     ${kpi('Resultado',esc(c.resultado||'andamento'))}
+    ${kpi('Negociação',tipoTxt(a))}
     ${kpi('Escada',(a.nivel_escada&&a.nivel_escada!=='null')?esc(a.nivel_escada):'—')}
     ${kpi('Segmento',esc(segOf(c)||'—'))}
     ${kpi('Duração',c.duracao_seg?Math.round(c.duracao_seg/60)+' min':'—')}
   </div>`;
   document.getElementById('paneA').innerHTML=`
-    <div class="rcard"><div class="rcard-head"><h3 style="margin:0">👥 Participantes & resultado</h3>
+    <div class="rcard"><div class="rcard-head"><h3 style="margin:0">👥 Participantes & classificação</h3>
       <span style="display:flex;gap:6px">
         <button class="btn-audio" onclick="reanalisarCall('${c.id}',this)" title="Re-roda a IA sobre a transcrição (atualiza segmento, análise e proposta)">🔄 Reanalisar</button>
         <button class="btn-audio" onclick="copiarHandoff('${c.id}',this)">📋 Copiar para CRM</button></span></div>
       <div class="chips">${PARTICIPANTES.map(p=>`<span class="chip ${part.includes(p)?'on':''}" onclick="toggleP('${c.id}','${p}')">${esc(p)}</span>`).join('')}</div>
-      <div class="chips" id="resChips" style="margin-top:9px">${resultadoChips(c)}</div></div>
+      <div class="ctrlrow"><span class="ctrllbl">Resultado</span><div class="chips" id="resChips">${resultadoChips(c)}</div></div>
+      <div class="ctrlrow"><span class="ctrllbl">Negociação</span><div class="chips" id="tipoChips">${tipoChips(c)}</div></div></div>
     ${kpis}
     <div class="rcard"><h3>📌 Resumo</h3><p>${esc(c.resumo||a.resumo||'—')}</p></div>
     ${propostaHtml(a)}
@@ -1178,7 +1208,7 @@ function copiarHandoff(id,btn){
     txt+='OFERTA RECOMENDADA: '+(a.nivel_escada?('['+a.nivel_escada+'] '):'')+(a.produto_recomendado||'—')+'\n';
   const pp=a.proposta_sugerida;
   if(pp&&Array.isArray(pp.itens)&&pp.itens.length){
-    txt+='\nPROPOSTA SUGERIDA (estimativa da IA — validar no GERA):\n';
+    txt+='\nPROPOSTA SUGERIDA ('+(pp.tipo==='aditivo'?'ADITIVO a contrato existente':'ATIVAÇÃO — contrato novo')+'; estimativa da IA, valores em revisão — validar no GERA):\n';
     pp.itens.forEach(i=>{ txt+='  - '+i.qtd+'x '+i.nome+' — '+brl(i.unit)+(i.cobranca==='mensal'?'/mês':' (único)')+' = '+brl(i.subtotal)+'\n'; });
     txt+='  TOTAL MENSAL: '+brl(pp.total_mensal)+(pp.total_unico?('  |  ATIVAÇÃO (única): '+brl(pp.total_unico)):'')+'\n';
   }
