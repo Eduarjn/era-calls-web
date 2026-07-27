@@ -190,6 +190,34 @@
   .tipobadge.ativacao{background:var(--beige);color:var(--accent)}
   .tipobadge.aditivo{background:var(--soft2);color:var(--blue)}
 
+  /* ---- popup de participantes (atrelar rápido + cadastro) ---- */
+  .chip.add{background:transparent;border:1px dashed var(--accent2);color:var(--accent2)}
+  .chip.add:hover{background:var(--soft2)}
+  .psec{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:16px 0 7px}
+  .psec:first-child{margin-top:4px}
+  .plist{display:flex;flex-direction:column;gap:5px}
+  .prow{display:flex;align-items:center;gap:10px;padding:9px 11px;border:1px solid var(--line);border-radius:4px;background:var(--soft3);cursor:pointer;transition:.13s}
+  .prow:hover{border-color:var(--accent2)}
+  .prow.on{border-color:var(--accent2);background:var(--soft2)}
+  .prow .pchk{width:17px;height:17px;flex:none;border:1px solid var(--line);border-radius:3px;display:grid;place-items:center;font-size:11px;color:transparent;background:var(--bg2)}
+  .prow.on .pchk{background:var(--accent2);border-color:var(--accent2);color:#fff}
+  .prow .pdot{width:9px;height:9px;border-radius:2px;flex:none}
+  .prow .pnome{flex:1;min-width:0;font-size:14px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .prow .porg{display:block;font-style:normal;font-weight:500;font-size:11.5px;color:var(--muted);margin-top:1px}
+  .prow .ptag{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;padding:3px 7px;border-radius:3px;background:var(--bg2);border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+  .prow .pqtd{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);white-space:nowrap}
+  .pacts{display:flex;gap:4px}
+  .pacts button{background:none;border:none;cursor:pointer;font-size:13px;color:var(--muted);padding:3px 5px;border-radius:3px}
+  .pacts button:hover{background:var(--bg2);color:var(--navy)}
+  .pform{border:1px solid var(--line);border-top:2px solid var(--accent);border-radius:4px;padding:13px;background:var(--soft);margin-top:16px}
+  .pform h4{font-size:13.5px;margin-bottom:9px;color:var(--navy)}
+  .pform .pgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .pform label{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:4px}
+  .pform input{width:100%;padding:9px 11px;border-radius:4px;border:1px solid var(--line);background:var(--bg2);color:var(--ink);font-size:14px;font-family:'Space Grotesk',sans-serif}
+  .pform .chips{margin:6px 0 0}
+  .pedit{grid-column:1/-1;display:flex;gap:7px;margin-top:10px;flex-wrap:wrap}
+  .phint{color:var(--muted);font-size:11.5px;margin-top:9px;line-height:1.45}
+
   .spinner{width:52px;height:52px;border-radius:50%;border:4px solid var(--bar);border-top-color:var(--accent);animation:spin .9s linear infinite;margin:6px auto 16px}
   .checkmark{width:56px;height:56px;margin:6px auto 14px;border-radius:4px;background:rgba(68,123,190,.12);display:grid;place-items:center;font-size:28px;color:var(--blue);animation:pop .4s}
   .progress{text-align:center;padding:34px 28px}
@@ -381,6 +409,14 @@
       <h2 style="font-size:22px;margin-bottom:16px">Usuários</h2>
       <h3 style="font-size:18px;margin-bottom:12px">📊 Panorama por vendedor</h3>
       <div class="grid" id="vendContent" style="margin-bottom:26px"></div>
+      <h3 style="font-size:18px;margin:6px 0 12px">👥 Participantes & parceiros</h3>
+      <div class="panel" style="margin-bottom:26px">
+        <div class="rcard-head">
+          <p style="color:var(--muted);font-size:13px;margin:0;max-width:560px">Cadastre aqui a nomenclatura certa de cada pessoa e de qual parceiro ela é. Depois é só atrelar nas calls pelo botão <b>👤 Participantes</b> do card ou pelo <b>＋ Atrelar participante</b> dentro da call.</p>
+          <button class="btn btn-primary" onclick="abrirPart(null)">➕ Gerenciar participantes</button>
+        </div>
+        <div id="partLista"></div>
+      </div>
       <div id="gestorPanel" class="hidden">
       <h3 style="font-size:18px;margin:6px 0 12px">🔑 Acesso</h3>
       <div class="panel" style="max-width:520px">
@@ -419,6 +455,33 @@
   </div>
 </div></div>
 
+<!-- POPUP: participantes (atrelar rápido + cadastro de parceiros) -->
+<div class="overlay" id="ovPart"><div class="modal" style="width:min(580px,96vw)">
+  <div class="head">
+    <div><h2 style="font-size:20px">👥 Participantes</h2>
+      <div class="sub" id="pSub" style="color:var(--muted);font-size:13px"></div></div>
+    <button class="x" onclick="fechar('ovPart')">×</button>
+  </div>
+  <div class="body">
+    <input id="pBusca" placeholder="🔎 Buscar ou digitar um nome novo…" oninput="renderPart()" onkeydown="partKey(event)" autocomplete="off">
+    <div class="chips" style="margin:11px 0 4px" id="pFiltros"></div>
+    <div id="pLista"></div>
+    <div class="pform">
+      <h4 id="pFormTit">➕ Novo participante</h4>
+      <div class="pgrid">
+        <div><label>Nome</label><input id="pNome" placeholder="Ex.: Carlos Andrade" onkeydown="if(event.key==='Enter')salvarForm()"></div>
+        <div><label>Parceiro / empresa</label><input id="pOrg" placeholder="Ex.: NetFibra Telecom" onkeydown="if(event.key==='Enter')salvarForm()"></div>
+        <div style="grid-column:1/-1"><label>Tipo</label><div class="chips" id="pTipos"></div></div>
+        <div class="pedit">
+          <button class="btn btn-primary" id="pSalvar" onclick="salvarForm()">Criar participante</button>
+          <button class="btn btn-soft hidden" id="pCancelar" onclick="cancelarForm()">Cancelar</button>
+        </div>
+      </div>
+      <p class="phint" id="pHint"></p>
+    </div>
+  </div>
+</div></div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
@@ -428,16 +491,244 @@ const SUPABASE_KEY = "sb_publishable_9zXFMPKbxrrDM8t5ecjY5Q_p4wCipFB";
 const FUNC = "quick-responder";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let USER=null, CALLS=[], PERFIS={}, CUR=null, FILE=null, PERIODO='tudo', MEU=null;
-const PARTICIPANTES=['Nicole','Gustavo','Tip','Parceiro'];  // edite aqui para adicionar/trocar pessoas
+/* ---- Cadastro de participantes (pessoas e parceiros) ----
+   PARTS vem da tabela `participantes` do Supabase (compartilhada pela empresa).
+   Enquanto a tabela não existir (supabase/participantes.sql), cai para localStorage
+   e o painel funciona igual — só não sincroniza entre navegadores. */
+let PARTS=[], PARTS_LOCAL=false, PART_CTX=null, PART_FILTRO='todos', PART_EDIT=null;
+const PART_SEED=['Nicole','Gustavo','Tip'];
+const TIPOS_P={interno:{ic:'👤',lbl:'Interno'},parceiro:{ic:'🤝',lbl:'Parceiro'},cliente:{ic:'🏢',lbl:'Cliente'}};
 const PALETA=['#2B3784','#447BBE','#DF1F2D','#141B3C','#6E86C7','#B11313','#8FB3DC','#4A5578','#98A6C9','#7A88B0'];
 function corPessoa(nome){
-  const i=PARTICIPANTES.indexOf(nome);
-  if(i>=0) return PALETA[i%PALETA.length];
-  let h=0; for(let k=0;k<nome.length;k++) h=(h*31+nome.charCodeAt(k))>>>0;
+  let h=0; const s=(nome||'').trim().toLowerCase();
+  for(let k=0;k<s.length;k++) h=(h*31+s.charCodeAt(k))>>>0;
   return PALETA[h%PALETA.length];
+}
+const chaveP=n=>(n||'').trim().toLowerCase();
+function partPorNome(n){ const k=chaveP(n); return PARTS.find(p=>chaveP(p.nome)===k)||null; }
+function labelPart(n){ const p=partPorNome(n); return (p&&p.organizacao)? p.nome+' · '+p.organizacao : n; }
+function iconePart(n){ const p=partPorNome(n); return (TIPOS_P[p&&p.tipo]||TIPOS_P.interno).ic; }
+function nomesEmUso(){ const s=new Set(); CALLS.forEach(c=>(Array.isArray(c.participantes)?c.participantes:[]).forEach(n=>{if(n)s.add(n)})); return [...s]; }
+function naoCadastrados(){ return nomesEmUso().filter(n=>!partPorNome(n)).sort((a,b)=>a.localeCompare(b)); }
+function contaCallsPart(n){ const k=chaveP(n); return CALLS.filter(c=>(Array.isArray(c.participantes)?c.participantes:[]).some(x=>chaveP(x)===k)).length; }
+
+function partsLocalLer(){ try{ return JSON.parse(localStorage.getItem('participantes_v1')||'null') }catch(_){ return null } }
+function partsLocalGravar(){ try{ localStorage.setItem('participantes_v1',JSON.stringify(PARTS)) }catch(_){} }
+async function carregarParticipantes(){
+  const {data,error}=await sb.from('participantes').select('*').order('nome');
+  if(error){   // tabela ainda não criada no banco → modo local
+    PARTS_LOCAL=true;
+    PARTS=partsLocalLer()||PART_SEED.map((n,i)=>({id:'l'+i,nome:n,tipo:'interno',organizacao:null,ativo:true}));
+    return;
+  }
+  PARTS_LOCAL=false;
+  PARTS=(data||[]).filter(p=>p.ativo!==false);
+}
+async function criarParticipante(nome,tipo,org){
+  nome=(nome||'').trim(); if(!nome) return null;
+  const ja=partPorNome(nome); if(ja) return ja;
+  const novo={nome,tipo:tipo||'interno',organizacao:(org||'').trim()||null,ativo:true};
+  if(PARTS_LOCAL){ novo.id='l'+Date.now()+Math.random().toString(36).slice(2,6); PARTS.push(novo); partsLocalGravar(); return novo; }
+  const {data,error}=await sb.from('participantes').insert(novo).select().single();
+  if(error){ alert('Não consegui salvar o participante: '+error.message); return null; }
+  PARTS.push(data); return data;
+}
+async function editarParticipante(p,nome,tipo,org){
+  nome=(nome||'').trim(); if(!nome) return false;
+  const outro=partPorNome(nome);
+  if(outro && outro.id!==p.id){ alert('Já existe um participante com esse nome.'); return false; }
+  const antigo=p.nome, campos={nome,tipo:tipo||'interno',organizacao:(org||'').trim()||null};
+  if(PARTS_LOCAL){ Object.assign(p,campos); partsLocalGravar(); }
+  else{
+    const {error}=await sb.from('participantes').update(campos).eq('id',p.id);
+    if(error){ alert('Não consegui salvar: '+error.message); return false; }
+    Object.assign(p,campos);
+  }
+  if(chaveP(antigo)!==chaveP(nome)) await renomearNasCalls(antigo,nome);
+  return true;
+}
+// Renomear propaga para as calls já marcadas (o vínculo é pelo nome)
+async function renomearNasCalls(antigo,novo){
+  const alvo=CALLS.filter(c=>(Array.isArray(c.participantes)?c.participantes:[]).some(x=>chaveP(x)===chaveP(antigo)));
+  for(const c of alvo){
+    const arr=c.participantes.map(x=>chaveP(x)===chaveP(antigo)?novo:x);
+    const {error}=await sb.from('calls').update({participantes:arr}).eq('id',c.id);
+    if(!error) c.participantes=arr;
+  }
+  if(alvo.length) render();
+}
+async function excluirParticipante(id){
+  const p=PARTS.find(x=>x.id===id); if(!p) return;
+  const n=contaCallsPart(p.nome);
+  const aviso=n?`\n\nEle está marcado em ${n} call(s) — as calls continuam com o nome, só some do cadastro.`:'';
+  if(!confirm(`Excluir "${p.nome}" do cadastro?${aviso}`)) return;
+  if(PARTS_LOCAL){ PARTS=PARTS.filter(x=>x.id!==id); partsLocalGravar(); }
+  else{
+    const {error}=await sb.from('participantes').delete().eq('id',id);
+    if(error){ alert('Não consegui excluir: '+error.message); return; }
+    PARTS=PARTS.filter(x=>x.id!==id);
+  }
+  if(PART_EDIT===id) cancelarForm();
+  renderPart(); render(); if(!document.getElementById('view-usuarios').classList.contains('hidden')) renderPartResumo();
+}
+
+/* ---- popup de atrelagem rápida ---- */
+function abrirPart(callId){
+  PART_CTX=callId||null; PART_FILTRO='todos'; PART_EDIT=null;
+  const c=callId?CALLS.find(x=>x.id===callId):null;
+  document.getElementById('pSub').textContent = c
+    ? 'Marque quem participou da call · '+(c.cliente||'Cliente não identificado')
+    : 'Cadastro de pessoas e parceiros da empresa';
+  document.getElementById('pBusca').value='';
+  cancelarForm();
+  document.getElementById('ovPart').classList.add('show');
+  renderPart();
+  setTimeout(()=>{const b=document.getElementById('pBusca'); if(b) b.focus();},70);
+}
+function setPartFiltro(f){ PART_FILTRO=f; renderPart(); }
+function partKey(e){
+  if(e.key!=='Enter') return;
+  e.preventDefault();
+  const q=document.getElementById('pBusca').value.trim(); if(!q) return;
+  const vis=partsVisiveis(q);
+  if(vis.length){ if(PART_CTX) toggleP(PART_CTX,vis[0].nome); return; }
+  document.getElementById('pNome').value=q;
+  document.getElementById('pOrg').focus();
+}
+function partsVisiveis(q){
+  q=(q!==undefined?q:(document.getElementById('pBusca')||{}).value||'').trim().toLowerCase();
+  return PARTS
+    .filter(p=>PART_FILTRO==='todos'||p.tipo===PART_FILTRO)
+    .filter(p=>!q||chaveP(p.nome).includes(q)||chaveP(p.organizacao).includes(q))
+    .sort((a,b)=>(a.nome||'').localeCompare(b.nome||''));
+}
+function linhaPart(p,marcados){
+  const on=marcados.some(x=>chaveP(x)===chaveP(p.nome));
+  const t=TIPOS_P[p.tipo]||TIPOS_P.interno, n=contaCallsPart(p.nome);
+  const acao=PART_CTX?`toggleP('${PART_CTX}',this.parentNode.dataset.n)`:`abrirEdicao(this.parentNode.dataset.id)`;
+  return `<div class="prow ${on?'on':''}" data-id="${p.id}" data-n="${escA(p.nome)}">
+    <span class="pchk" onclick="event.stopPropagation();${acao}">✓</span>
+    <span class="pdot" style="background:${corPessoa(p.nome)}"></span>
+    <span class="pnome" onclick="event.stopPropagation();${acao}">${t.ic} ${esc(p.nome)}${p.organizacao?`<em class="porg">${esc(p.organizacao)}</em>`:''}</span>
+    <span class="ptag">${t.lbl}</span>
+    <span class="pqtd">${n?n+' call'+(n>1?'s':''):'—'}</span>
+    <span class="pacts">
+      <button title="Editar" onclick="event.stopPropagation();abrirEdicao('${p.id}')">✏️</button>
+      <button title="Excluir do cadastro" onclick="event.stopPropagation();excluirParticipante('${p.id}')">🗑️</button>
+    </span></div>`;
+}
+function renderPart(){
+  const ov=document.getElementById('ovPart'); if(!ov||!ov.classList.contains('show')) return;
+  const c=PART_CTX?CALLS.find(x=>x.id===PART_CTX):null;
+  const marcados=c&&Array.isArray(c.participantes)?c.participantes:[];
+  const q=(document.getElementById('pBusca').value||'').trim();
+  document.getElementById('pFiltros').innerHTML=[['todos','Todos'],['interno','👤 Internos'],['parceiro','🤝 Parceiros'],['cliente','🏢 Clientes']]
+    .map(([k,l])=>`<span class="chip ${PART_FILTRO===k?'on':''}" onclick="setPartFiltro('${k}')">${l}</span>`).join('');
+  const vis=partsVisiveis(q);
+  let html='';
+  if(c&&marcados.length){
+    html+=`<div class="psec">Nesta call (${marcados.length})</div><div class="chips">`+
+      marcados.map(n=>`<span class="chip on" style="background:${corPessoa(n)};border-color:${corPessoa(n)}" data-n="${escA(n)}" onclick="toggleP('${PART_CTX}',this.dataset.n)" title="Clique para desmarcar">${iconePart(n)} ${esc(labelPart(n))} ✕</span>`).join('')+'</div>';
+  }
+  html+=`<div class="psec">${PART_CTX?'Marcar participante':'Cadastro'}${q?' · filtrando por "'+esc(q)+'"':''}</div>`;
+  html+= vis.length
+    ? '<div class="plist">'+vis.map(p=>linhaPart(p,marcados)).join('')+'</div>'
+    : `<p style="color:var(--muted);font-size:13px">${q?'Ninguém com esse nome. Cadastre abaixo — o nome já foi copiado ao apertar Enter.':'Cadastro vazio. Crie o primeiro participante abaixo.'}</p>`;
+  const soltos=naoCadastrados().filter(n=>!q||chaveP(n).includes(q.toLowerCase()));
+  if(soltos.length){
+    html+=`<div class="psec">Detectados nas calls · fora do cadastro (${soltos.length})</div><div class="plist">`+
+      soltos.map(n=>{
+        const on=marcados.some(x=>chaveP(x)===chaveP(n));
+        return `<div class="prow ${on?'on':''}" data-n="${escA(n)}">
+          <span class="pchk" ${PART_CTX?`onclick="toggleP('${PART_CTX}',this.parentNode.dataset.n)"`:''}>✓</span>
+          <span class="pdot" style="background:${corPessoa(n)}"></span>
+          <span class="pnome">${esc(n)}<em class="porg">sem cadastro — sem tipo/parceiro definido</em></span>
+          <span class="pqtd">${contaCallsPart(n)} call(s)</span>
+          <span class="pacts"><button title="Cadastrar este nome" onclick="cadastrarSolto(this.parentNode.parentNode.dataset.n)">➕ cadastrar</button></span></div>`;
+      }).join('')+'</div>';
+  }
+  document.getElementById('pLista').innerHTML=html;
+  document.getElementById('pTipos').innerHTML=Object.entries(TIPOS_P)
+    .map(([k,t])=>`<span class="chip ${(document.getElementById('pTipos').dataset.v||'interno')===k?'on':''}" onclick="setTipoForm('${k}')">${t.ic} ${t.lbl}</span>`).join('');
+  document.getElementById('pHint').innerHTML = PARTS_LOCAL
+    ? '⚠️ Cadastro salvo só neste navegador. Rode <b>supabase/participantes.sql</b> no SQL Editor para compartilhar com a equipe.'
+    : (PART_CTX?'Dica: digite o nome na busca e aperte <b>Enter</b> — marca na hora. Sem resultado, o nome já vai para o cadastro abaixo.':'Use <b>Parceiro / empresa</b> para registrar de qual parceiro a pessoa é.');
+}
+function setTipoForm(k){ document.getElementById('pTipos').dataset.v=k; document.getElementById('pOrg').placeholder = k==='interno'?'Opcional (time/área)':'Ex.: NetFibra Telecom'; renderPart(); }
+function abrirEdicao(id){
+  const p=PARTS.find(x=>x.id===id); if(!p) return;
+  PART_EDIT=id;
+  document.getElementById('pFormTit').textContent='✏️ Editando "'+p.nome+'"';
+  document.getElementById('pNome').value=p.nome;
+  document.getElementById('pOrg').value=p.organizacao||'';
+  document.getElementById('pTipos').dataset.v=p.tipo||'interno';
+  document.getElementById('pSalvar').textContent='Salvar alterações';
+  document.getElementById('pCancelar').classList.remove('hidden');
+  renderPart();
+  document.getElementById('pNome').focus();
+}
+function cancelarForm(){
+  PART_EDIT=null;
+  const f=id=>document.getElementById(id);
+  f('pFormTit').textContent='➕ Novo participante';
+  f('pNome').value=''; f('pOrg').value='';
+  f('pTipos').dataset.v='interno';
+  f('pSalvar').textContent=PART_CTX?'Criar e marcar na call':'Criar participante';
+  f('pCancelar').classList.add('hidden');
+  renderPart();
+}
+function cadastrarSolto(nome){
+  PART_EDIT=null;
+  document.getElementById('pFormTit').textContent='➕ Cadastrar "'+nome+'"';
+  document.getElementById('pNome').value=nome;
+  document.getElementById('pOrg').value='';
+  document.getElementById('pTipos').dataset.v='parceiro';
+  document.getElementById('pSalvar').textContent='Cadastrar';
+  document.getElementById('pCancelar').classList.remove('hidden');
+  renderPart();
+  document.getElementById('pOrg').focus();
+}
+async function salvarForm(){
+  const nome=document.getElementById('pNome').value.trim();
+  const org=document.getElementById('pOrg').value.trim();
+  const tipo=document.getElementById('pTipos').dataset.v||'interno';
+  if(!nome){ document.getElementById('pNome').focus(); return; }
+  const btn=document.getElementById('pSalvar'); btn.disabled=true;
+  try{
+    if(PART_EDIT){
+      const p=PARTS.find(x=>x.id===PART_EDIT);
+      if(p && await editarParticipante(p,nome,tipo,org)) cancelarForm();
+    }else{
+      const novo=await criarParticipante(nome,tipo,org);
+      if(novo){
+        document.getElementById('pBusca').value='';
+        cancelarForm();
+        if(PART_CTX){
+          const c=CALLS.find(x=>x.id===PART_CTX);
+          const ja=c&&Array.isArray(c.participantes)&&c.participantes.some(x=>chaveP(x)===chaveP(novo.nome));
+          if(!ja) await toggleP(PART_CTX,novo.nome);
+        }
+      }
+    }
+    render();
+    if(!document.getElementById('view-usuarios').classList.contains('hidden')) renderPartResumo();
+  } finally { btn.disabled=false; renderPart(); }
+}
+function renderPartResumo(){
+  const el=document.getElementById('partLista'); if(!el) return;
+  const soltos=naoCadastrados();
+  const linhas=PARTS.slice().sort((a,b)=>contaCallsPart(b.nome)-contaCallsPart(a.nome)||(a.nome||'').localeCompare(b.nome||''))
+    .map(p=>{const t=TIPOS_P[p.tipo]||TIPOS_P.interno;
+      return `<tr><td>${t.ic} ${esc(p.nome)}</td><td>${t.lbl}</td><td>${esc(p.organizacao||'—')}</td><td style="text-align:center">${contaCallsPart(p.nome)}</td></tr>`;}).join('');
+  el.innerHTML = (PARTS.length
+      ? `<div style="overflow:auto"><table class="tbl"><thead><tr><th>Nome</th><th>Tipo</th><th>Parceiro / empresa</th><th style="text-align:center">Calls</th></tr></thead><tbody>${linhas}</tbody></table></div>`
+      : '<p style="color:var(--muted)">Nenhum participante cadastrado ainda.</p>')
+    + (soltos.length?`<p style="color:var(--accent);font-size:12.5px;margin-top:10px">⚠️ ${soltos.length} nome(s) marcado(s) em calls e ainda fora do cadastro: ${soltos.map(esc).join(', ')}</p>`:'')
+    + (PARTS_LOCAL?'<p style="color:var(--muted);font-size:12px;margin-top:8px">Cadastro salvo só neste navegador — rode <b>supabase/participantes.sql</b> para compartilhar com a equipe.</p>':'');
 }
 
 function esc(s){return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function escA(s){return esc(s).replace(/"/g,'&quot;').replace(/'/g,'&#39;')}   // seguro dentro de atributo HTML
 function lista(arr){ if(!arr||!arr.length) return '<p style="color:var(--muted)">—</p>';
   return '<ul>'+arr.map(x=>'<li>'+esc(typeof x==='string'?x:JSON.stringify(x))+'</li>').join('')+'</ul>'; }
 function mdToHtml(md){
@@ -621,6 +912,7 @@ async function carregar(){
   topbar(78);
   CALLS=calls||[]; PERFIS={}; (perfis||[]).forEach(p=>PERFIS[p.id]={nome:p.nome,email:p.email,papel:p.papel});
   MEU = USER ? PERFIS[USER.id] : null;
+  await carregarParticipantes();
   render(); topbar(100);
 }
 function setPeriodo(p){ PERIODO=p; document.querySelectorAll('.per').forEach(b=>b.classList.toggle('active',b.dataset.p===p)); render(); }
@@ -647,13 +939,14 @@ function escadaBadge(c){
 function cardEl(c,i){
   const cls={positivo:'b-pos',neutro:'b-neu',negativo:'b-neg'}[c.sentimento]||'b-neu';
   const part=Array.isArray(c.participantes)?c.participantes:[];
-  const partHtml=part.length?`<div class="chips" style="margin-top:2px">${part.map(p=>`<span class="chip on" style="background:${corPessoa(p)};padding:3px 10px;font-size:12px;cursor:default">👤 ${esc(p)}</span>`).join('')}</div>`:'';
+  const partHtml=part.length?`<div class="chips" style="margin-top:2px">${part.map(p=>`<span class="chip on" style="background:${corPessoa(p)};border-color:${corPessoa(p)};padding:3px 10px;font-size:12px;cursor:default" title="${escA(labelPart(p))}">${iconePart(p)} ${esc(labelPart(p))}</span>`).join('')}</div>`:'';
   const d=document.createElement('div'); d.className='call'; d.style.animationDelay=(i*.04)+'s'; d.onclick=()=>abrir(c.id);
   d.innerHTML=`<div class="name">${esc(c.cliente||'Cliente não identificado')}</div>
     <div class="meta">${new Date(c.data_call).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</div>
     <div class="badges"><span class="badge ${cls}">${esc(c.sentimento||'—')}</span><span class="badge b-score">Score ${c.score_oportunidade??'—'}</span>${escadaBadge(c)}${c.resultado==='ganho'?'<span class="badge b-pos">✅ Ganho</span>':c.resultado==='perdido'?'<span class="badge b-neg">❌ Perdido</span>':''}</div>
     ${partHtml}
     <div class="cardacts" onclick="event.stopPropagation()">
+      <button onclick="abrirPart('${c.id}')" title="Atrelar participantes / parceiros a esta call">👤 Participantes</button>
       <button onclick="renomearId('${c.id}')" title="Renomear">✏️ Renomear</button>
       <button onclick="excluirCall('${c.id}')" title="Excluir">🗑️</button>
     </div>`;
@@ -912,12 +1205,16 @@ function renderVend(){
 }
 
 async function toggleP(id,nome){
-  const c=CALLS.find(x=>x.id===id); if(!c) return;
+  const c=CALLS.find(x=>x.id===id); if(!c||!nome) return;
   let arr=Array.isArray(c.participantes)?c.participantes.slice():[];
-  arr = arr.includes(nome) ? arr.filter(x=>x!==nome) : [...arr,nome];
+  const tem=arr.some(x=>chaveP(x)===chaveP(nome));
+  arr = tem ? arr.filter(x=>chaveP(x)!==chaveP(nome)) : [...arr,nome];
   const {error}=await sb.from('calls').update({participantes:arr}).eq('id',id);
   if(error){ alert('Erro ao salvar participante: '+error.message); return; }
-  c.participantes=arr; abrir(id);
+  c.participantes=arr;
+  render();
+  renderPart();
+  if(document.getElementById('ovDet').classList.contains('show') && CUR && CUR.id===id) abrir(id);
 }
 function segOf(c){ return (c.segmento||(c.analise&&c.analise.segmento)||'').toString().trim(); }
 async function reanalisarCall(id,btn){
@@ -1111,6 +1408,7 @@ async function criarUsuario(){
 }
 function renderUsuarios(){
   renderVend();
+  renderPartResumo();
   document.getElementById('gestorPanel').classList.toggle('hidden', !(MEU && MEU.papel==='gestor'));
   const arr=Object.values(PERFIS).sort((a,b)=>(a.nome||'').localeCompare(b.nome||''));
   document.getElementById('uLista').innerHTML = arr.length
@@ -1166,7 +1464,7 @@ function abrir(id){
       <span style="display:flex;gap:6px">
         <button class="btn-audio" onclick="reanalisarCall('${c.id}',this)" title="Re-roda a IA sobre a transcrição (atualiza segmento, análise e proposta)">🔄 Reanalisar</button>
         <button class="btn-audio" onclick="copiarHandoff('${c.id}',this)">📋 Copiar para CRM</button></span></div>
-      <div class="chips">${PARTICIPANTES.map(p=>`<span class="chip ${part.includes(p)?'on':''}" onclick="toggleP('${c.id}','${p}')">${esc(p)}</span>`).join('')}</div>
+      <div class="chips">${part.map(p=>`<span class="chip on" style="background:${corPessoa(p)};border-color:${corPessoa(p)}" data-n="${escA(p)}" onclick="toggleP('${c.id}',this.dataset.n)" title="Clique para desmarcar">${iconePart(p)} ${esc(labelPart(p))} ✕</span>`).join('')}<span class="chip add" onclick="abrirPart('${c.id}')">＋ Atrelar participante</span></div>
       <div class="ctrlrow"><span class="ctrllbl">Resultado</span><div class="chips" id="resChips">${resultadoChips(c)}</div></div>
       <div class="ctrlrow"><span class="ctrllbl">Negociação</span><div class="chips" id="tipoChips">${tipoChips(c)}</div></div></div>
     ${kpis}
@@ -1308,7 +1606,12 @@ function tab(q){ const a=q==='a';
   document.getElementById('paneA').classList.toggle('hidden',!a);document.getElementById('paneT').classList.toggle('hidden',a);}
 function showProg(html){ document.getElementById('progBody').innerHTML=html; document.getElementById('ovProg').classList.add('show'); }
 function fechar(id){ document.getElementById(id).classList.remove('show'); }
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){fechar('ovDet');fechar('ovProg');}});
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Escape') return;
+  const p=document.getElementById('ovPart');
+  if(p&&p.classList.contains('show')){ fechar('ovPart'); return; }   // fecha só o popup, mantém o detalhe aberto
+  fechar('ovDet'); fechar('ovProg');
+});
 
 // Spotlight: cada card acende um brilho radial na posição do cursor (estilo 21st/Aceternity)
 (function(){
