@@ -18,7 +18,7 @@
     --bg:#F4F5F8;--bg2:#ffffff;--card:#ffffff;--card2:#EDF0F5;
     --txt:#141B3C;--ink:#2A3050;--muted:#6A7186;--line:#DDE1EA;
     --navy:#141B3C;--accent:#DF1F2D;--accent2:#2B3784;--beige:#FBE9EA;
-    --green:#447BBE;--amber:#6A7186;--red:#B11313;--blue:#447BBE;
+    --green:#0E8A52;--amber:#B8730D;--red:#C0161F;--blue:#2F62B8;
     --shadow:0 1px 2px rgba(20,27,60,.05),0 8px 24px rgba(20,27,60,.06);
     --glow:transparent;--soft:#fff;--soft2:#EDF0F5;--soft3:#F8F9FB;--bar:#E7EAF1;--modal:#fff;
     --head:#ffffff;
@@ -27,7 +27,7 @@
     --bg:#0E1322;--bg2:#131A2E;--card:#151C33;--card2:#1C2440;
     --txt:#EDF0F8;--ink:#C6CCE0;--muted:#8A92AC;--line:#252E4D;
     --navy:#EDF0F8;--accent:#E8323F;--accent2:#8FA6E8;--beige:#3A2430;
-    --green:#6FA3E0;--amber:#8A92AC;--red:#E05561;--blue:#6FA3E0;
+    --green:#35B87A;--amber:#E0A340;--red:#E85560;--blue:#5B8FDE;
     --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);
     --glow:transparent;--soft:#151C33;--soft2:#1C2440;--soft3:#182038;--bar:#232C4C;--modal:#151C33;
     --head:#131A2E;
@@ -95,9 +95,12 @@
   .cardacts button:hover{color:var(--navy);border-color:var(--accent2)}
   .badges{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
   .badge{font-size:10.5px;font-weight:600;padding:4px 9px;border-radius:3px;font-family:'IBM Plex Mono',monospace;letter-spacing:.02em}
-  .b-pos{background:rgba(68,123,190,.12);color:#2E5E9E} .b-neu{background:rgba(106,113,134,.12);color:var(--amber)} .b-neg{background:rgba(177,19,19,.10);color:var(--red)}
+  /* selos semânticos: verde = bom, cinza = neutro, vermelho = ruim (nunca identidade) */
+  .b-pos{background:rgba(14,138,82,.12);color:#0B7546} .b-neu{background:rgba(106,113,134,.12);color:#6A7186} .b-neg{background:rgba(223,31,45,.10);color:#C0161F}
   .b-score{background:rgba(43,55,132,.10);color:var(--accent2)}
-  [data-theme="dark"] .b-pos{color:#8FC0F0}
+  [data-theme="dark"] .b-pos{background:rgba(53,184,122,.16);color:#35B87A}
+  [data-theme="dark"] .b-neu{color:#8A92AC}
+  [data-theme="dark"] .b-neg{background:rgba(232,85,96,.16);color:#E85560}
   mark{background:var(--beige);color:var(--navy);border-radius:2px;padding:0 2px;font-weight:600}
   .periodos{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
   .per{padding:7px 14px;border-radius:4px;background:transparent;border:1px solid var(--line);color:var(--muted);cursor:pointer;font-weight:600;font-size:13px;font-family:'Space Grotesk',sans-serif;transition:.15s}
@@ -227,9 +230,66 @@
   @keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
   @keyframes pop{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
   @keyframes grow{from{width:0!important}}
-  @keyframes pieIn{from{opacity:0;transform:scale(.75)}to{opacity:1;transform:scale(1)}}
   @keyframes legIn{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:translateX(0)}}
-  svg.pie{animation:pieIn .55s cubic-bezier(.2,.8,.2,1.05) both;transform-origin:72px 72px}
+  /* ============================================================
+     Relatórios — componentes de leitura (tiles, barra divergente,
+     ranking e colunas). Regras: marca fina, rótulo direto sempre
+     visível (a cor nunca é o único canal), vão de 2px entre fatias,
+     grade discreta. O repouso é o estado VISÍVEL — a animação é extra.
+     ============================================================ */
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:0 0 16px}
+  .tile{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:13px 15px;position:relative;overflow:hidden}
+  .tile::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--tint,transparent)}
+  .tile .v{font-size:27px;font-weight:600;color:var(--navy);line-height:1.05;letter-spacing:-.02em}
+  .tile .v small{font-size:13px;color:var(--muted);font-weight:500;letter-spacing:0}
+  .tile .l{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-top:7px}
+  .tile .s{font-size:11.5px;color:var(--muted);margin-top:3px}
+  /* barra divergente: escala ordenada com o neutro no eixo central */
+  .divbar{position:relative;height:36px;margin:4px 0 0}
+  .divbar .seg{position:absolute;top:0;bottom:0;border-radius:3px;display:flex;align-items:center;justify-content:center;
+    color:#fff;font-size:12.5px;font-weight:600;font-family:'IBM Plex Mono',monospace;overflow:hidden;animation:segIn .55s ease both}
+  .divbar .zero{position:absolute;top:-8px;bottom:-8px;left:50%;width:1px;background:var(--muted);opacity:.45}
+  @keyframes segIn{from{opacity:0}to{opacity:1}}
+  .divends{display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:9.5px;
+    letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:10px}
+  .lg{display:flex;gap:15px;flex-wrap:wrap;margin-top:11px}
+  .lg .it{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink)}
+  .lg .it i{width:11px;height:11px;border-radius:2px;flex:none}
+  .lg .it b{font-family:'IBM Plex Mono',monospace;font-weight:500;color:var(--muted);font-size:12px}
+  /* ranking de pessoas: barra de UMA cor (quantidade) + ponto de identidade */
+  .rk{padding:10px 8px;border-radius:4px;cursor:pointer;transition:background .15s}
+  .rk:hover{background:var(--soft3)}
+  .rk .top{display:flex;align-items:center;gap:8px;font-size:14px;margin-bottom:7px}
+  .rk .top .dot{width:10px;height:10px;border-radius:2px;flex:none}
+  .rk .top .nm{font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rk .top .org{color:var(--muted);font-weight:400;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rk .top .sp{flex:1;min-width:6px}
+  .rk .top .n{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--muted);white-space:nowrap}
+  .rk .top .sc{font-family:'IBM Plex Mono',monospace;font-size:11px;padding:2px 7px;border-radius:3px;font-weight:600;white-space:nowrap}
+  .rk .trk{height:9px;background:var(--bar);border-radius:3px;overflow:hidden}
+  .rk .trk span{display:block;height:100%;border-radius:3px;transform-origin:left;animation:growX .7s cubic-bezier(.16,1,.3,1) both}
+  @keyframes growX{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+  /* colunas de volume no tempo */
+  .cols{display:flex;align-items:flex-end;gap:6px;height:148px}
+  .cols .c{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;gap:5px;min-width:0}
+  .cols .c i{display:block;width:100%;max-width:54px;border-radius:3px 3px 0 0;transform-origin:bottom;animation:growY .7s cubic-bezier(.16,1,.3,1) both}
+  @keyframes growY{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+  .cols .c em{font-style:normal;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+  .cols .c u{text-decoration:none;font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--ink);font-weight:600}
+  .vazio{color:var(--muted);font-size:13.5px;padding:18px 2px;text-align:center}
+  .secx{display:flex;align-items:baseline;gap:10px;margin:22px 0 12px;flex-wrap:wrap}
+  .secx h3{font-size:18px} .secx span{color:var(--muted);font-size:12.5px}
+  .tbl td.num{text-align:right;font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
+  .tbl tr.clicavel{cursor:pointer}
+  .dotst{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:7px;vertical-align:-1px}
+  @media(prefers-reduced-motion:reduce){.divbar .seg,.rk .trk span,.cols .c i{animation:none}}
+  /* tela estreita: o nome nunca é cortado — os números descem para a linha de baixo */
+  @media(max-width:680px){
+    .rk .top{flex-wrap:wrap;row-gap:5px}
+    .rk .top .nm{white-space:normal;overflow:visible;text-overflow:clip}
+    .rk .top .org{white-space:normal;overflow:visible}
+    .rk .top .sp{flex:1 0 100%;height:0}
+  }
   svg.pie path,svg.pie circle{transition:opacity .15s,transform .15s;transform-origin:72px 72px}
   svg.pie path:hover{opacity:.82;transform:scale(1.03)}
   /* ---- Marketing ---- */
@@ -377,7 +437,8 @@
         <div id="buscaSug" class="chips" style="margin:12px 0"></div>
         <div id="buscaRes"></div>
       </div>
-      <h3 style="font-size:18px;margin:6px 0 12px">🧾 Rastreabilidade</h3>
+      <div class="secx"><h3>📊 Panorama do período</h3>
+        <span>Os filtros abaixo valem para tudo nesta aba — números, gráficos e tabela.</span></div>
       <div class="filtros">
         <input id="relBusca" placeholder="🔎 Filtrar a tabela por cliente, segmento ou participante" oninput="renderRelatorios()">
         <select id="relSeg" onchange="renderRelatorios()" style="width:auto;padding:9px 12px;border-radius:4px;border:1px solid var(--line);background:var(--bg2);color:var(--navy);font-size:14px;font-family:'Space Grotesk'">
@@ -498,11 +559,44 @@ let USER=null, CALLS=[], PERFIS={}, CUR=null, FILE=null, PERIODO='tudo', MEU=nul
 let PARTS=[], PARTS_LOCAL=false, PART_CTX=null, PART_FILTRO='todos', PART_EDIT=null;
 const PART_SEED=['Nicole','Gustavo','Tip'];
 const TIPOS_P={interno:{ic:'👤',lbl:'Interno'},parceiro:{ic:'🤝',lbl:'Parceiro'},cliente:{ic:'🏢',lbl:'Cliente'}};
-const PALETA=['#2B3784','#447BBE','#DF1F2D','#141B3C','#6E86C7','#B11313','#8FB3DC','#4A5578','#98A6C9','#7A88B0'];
-function corPessoa(nome){
-  let h=0; const s=(nome||'').trim().toLowerCase();
-  for(let k=0;k<s.length;k++) h=(h*31+s.charCodeAt(k))>>>0;
-  return PALETA[h%PALETA.length];
+/* ---------- Sistema de cores dos gráficos ----------
+   Duas paletas com papéis SEPARADOS (validadas com o validador do skill dataviz:
+   banda de luminosidade, piso de croma, separação sob daltonismo protan/deutan
+   ΔE≥9 entre vizinhas e contraste ≥3:1 — nos dois temas):
+   · SÉRIE  = identidade (quem é a pessoa). 7 slots fixos em ordem alfabética
+     estável → a cor segue a PESSOA, nunca a posição no ranking.
+   · STATUS = significado (bom/neutro/ruim/alerta). Verde=positivo/ganho,
+     vermelho=negativo/perdido, cinza=neutro/andamento, âmbar=atenção.
+   Vermelho NUNCA é cor de pessoa — assim vermelho sempre quer dizer "ruim". */
+const SERIE_L=['#2F62B8','#C2701A','#008E7B','#6B4FBF','#5C7A00','#C43D7E','#4356B0'];
+const SERIE_D=['#5B8FDE','#C27E30','#29A199','#9179E4','#7F9C22','#DC6098','#6E82D8'];
+const STATUS_L={bom:'#0E8A52',neutro:'#6A7186',ruim:'#DF1F2D',alerta:'#B8730D'};
+const STATUS_D={bom:'#35B87A',neutro:'#8A92AC',ruim:'#E85560',alerta:'#E0A340'};
+const temaEscuro=()=>document.documentElement.getAttribute('data-theme')==='dark';
+function corSerie(i){ const p=temaEscuro()?SERIE_D:SERIE_L; return p[((i|0)%p.length+p.length)%p.length]; }
+function corStatus(k){ return (temaEscuro()?STATUS_D:STATUS_L)[k]||corSerie(0); }
+const PALETA=SERIE_L;
+let _pIdx=new Map(), _pKey='';
+function indicePessoa(nome){
+  const nomes=[...new Set([...PARTS.map(p=>p.nome),...nomesEmUso()])].filter(Boolean).sort((a,b)=>chaveP(a).localeCompare(chaveP(b)));
+  const k=nomes.join('|');
+  if(k!==_pKey){ _pKey=k; _pIdx=new Map(nomes.map((n,i)=>[chaveP(n),i])); }
+  const v=_pIdx.get(chaveP(nome));
+  return v==null?0:v;
+}
+function corPessoa(nome){ return corSerie(indicePessoa(nome)); }
+// cor do score pelo que ele SIGNIFICA (o número fica sempre visível ao lado)
+function corScore(v){ return v==null?'neutro':(v>=70?'bom':v>=45?'alerta':'ruim'); }
+// tinta legível SOBRE um preenchimento: escolhe entre branco e navy o que der
+// MAIS contraste (pior caso medido: 4,3:1 — nenhum rótulo fica lavado no tema claro nem no escuro)
+function lumRel(hex){
+  const h=(hex||'').replace('#','');
+  const f=k=>{const v=parseInt(h.substr(k,2),16)/255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4)};
+  return .2126*f(0)+.7152*f(2)+.0722*f(4);
+}
+function txtOn(hex){
+  const L=lumRel(hex), cW=(1.05)/(L+.05), cD=(L+.05)/(lumRel('#101733')+.05);
+  return cW>=cD?'#ffffff':'#101733';
 }
 const chaveP=n=>(n||'').trim().toLowerCase();
 function partPorNome(n){ const k=chaveP(n); return PARTS.find(p=>chaveP(p.nome)===k)||null; }
@@ -628,7 +722,7 @@ function renderPart(){
   let html='';
   if(c&&marcados.length){
     html+=`<div class="psec">Nesta call (${marcados.length})</div><div class="chips">`+
-      marcados.map(n=>`<span class="chip on" style="background:${corPessoa(n)};border-color:${corPessoa(n)}" data-n="${escA(n)}" onclick="toggleP('${PART_CTX}',this.dataset.n)" title="Clique para desmarcar">${iconePart(n)} ${esc(labelPart(n))} ✕</span>`).join('')+'</div>';
+      marcados.map(n=>`<span class="chip on" style="background:${corPessoa(n)};border-color:${corPessoa(n)};color:${txtOn(corPessoa(n))}" data-n="${escA(n)}" onclick="toggleP('${PART_CTX}',this.dataset.n)" title="Clique para desmarcar">${iconePart(n)} ${esc(labelPart(n))} ✕</span>`).join('')+'</div>';
   }
   html+=`<div class="psec">${PART_CTX?'Marcar participante':'Cadastro'}${q?' · filtrando por "'+esc(q)+'"':''}</div>`;
   html+= vis.length
@@ -769,11 +863,26 @@ function toggleTema(){
   const novo=atual==='dark'?'light':'dark';
   try{ localStorage.setItem('tema',novo); }catch(_){}
   aplicarTema(novo);
+  redesenhar();   // as cores dos gráficos são escolhidas por tema — precisa refazer
+}
+// re-render da view aberta (usado ao trocar de tema)
+let VIEW_ATUAL='calls';
+function redesenhar(){
+  try{ render(); }catch(_){}
+  try{
+    if(VIEW_ATUAL==='trend') renderTrend();
+    else if(VIEW_ATUAL==='mkt') renderMkt();
+    else if(VIEW_ATUAL==='rel'){ renderRelatorios(); renderBusca(); }
+    else if(VIEW_ATUAL==='usuarios') renderUsuarios();
+  }catch(_){}
+  if(CUR && document.getElementById('ovDet').classList.contains('show')) { try{ abrir(CUR.id); }catch(_){} }
+  renderPart();
 }
 (function(){ let t='light'; try{ t=localStorage.getItem('tema')|| (window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'); }catch(_){}
   aplicarTema(t); })();
 
 function view(v){
+  VIEW_ATUAL=v;
   ['calls','trend','mkt','rel','base','usuarios'].forEach(x=>{
     document.getElementById('view-'+x).classList.toggle('hidden',x!==v);
     document.getElementById('nav-'+x).classList.toggle('active',x===v);
@@ -939,7 +1048,7 @@ function escadaBadge(c){
 function cardEl(c,i){
   const cls={positivo:'b-pos',neutro:'b-neu',negativo:'b-neg'}[c.sentimento]||'b-neu';
   const part=Array.isArray(c.participantes)?c.participantes:[];
-  const partHtml=part.length?`<div class="chips" style="margin-top:2px">${part.map(p=>`<span class="chip on" style="background:${corPessoa(p)};border-color:${corPessoa(p)};padding:3px 10px;font-size:12px;cursor:default" title="${escA(labelPart(p))}">${iconePart(p)} ${esc(labelPart(p))}</span>`).join('')}</div>`:'';
+  const partHtml=part.length?`<div class="chips" style="margin-top:2px">${part.map(p=>`<span class="chip on" style="background:${corPessoa(p)};border-color:${corPessoa(p)};color:${txtOn(corPessoa(p))};padding:3px 10px;font-size:12px;cursor:default" title="${escA(labelPart(p))}">${iconePart(p)} ${esc(labelPart(p))}</span>`).join('')}</div>`:'';
   const d=document.createElement('div'); d.className='call'; d.style.animationDelay=(i*.04)+'s'; d.onclick=()=>abrir(c.id);
   d.innerHTML=`<div class="name">${esc(c.cliente||'Cliente não identificado')}</div>
     <div class="meta">${new Date(c.data_call).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</div>
@@ -1000,8 +1109,11 @@ function irBuscar(t){
 function animBar(pairs){
   if(!pairs.length) return '<p style="color:var(--muted)">Sem dados ainda. Analise algumas calls.</p>';
   const max=pairs[0][1];
+  // uma medida = UMA cor. O comprimento da barra já diz quem é maior; colorir por
+  // ranking gastaria o canal de identidade repetindo o que a barra mostra.
+  const cor=corSerie(0);
   return pairs.map(([t,n],i)=>{
-    const cor=PALETA[i%PALETA.length], w=Math.max(6,Math.round(n/max*100));
+    const w=Math.max(6,Math.round(n/max*100));
     const q=esc(t).replace(/"/g,'&quot;');
     return `<div class="cbar clic" data-q="${q}" onclick="irBuscar(this.dataset.q)" title="Clique para ver as calls onde isso aparece" style="animation-delay:${(i*.05).toFixed(2)}s">
       <div class="top"><span class="rank" style="background:${cor}">${i+1}</span>
@@ -1093,7 +1205,7 @@ function renderTrend(){
   const res={ganho:0,perdido:0,andamento:0}; F.forEach(c=>{ const r=c.resultado||'andamento'; if(res[r]!=null)res[r]++; });
   const decididas=res.ganho+res.perdido;
   const taxa=decididas?Math.round(res.ganho/decididas*100):0;
-  const pieRes=pieSVG([{label:'Ganho',value:res.ganho,color:'#447BBE'},{label:'Perdido',value:res.perdido,color:'#B11313'},{label:'Em andamento',value:res.andamento,color:'#98A2B8'}]);
+  const pieRes=barraDiverg({v:res.perdido,lbl:'Perdido',st:'ruim'},{v:res.andamento,lbl:'Em andamento',st:'neutro'},{v:res.ganho,lbl:'Ganho',st:'bom'},['perdido','ganho']);
   // Win/loss por objeção: entre as calls JÁ decididas, qual objeção mais aparece em perdas
   const dec=F.filter(c=>c.resultado==='ganho'||c.resultado==='perdido');
   const porObj={};
@@ -1330,45 +1442,143 @@ function popularFiltroSeg(){
   sel.innerHTML='<option value="">🏷️ Todos os segmentos</option>'+segs.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join('');
   if(segs.includes(atual)) sel.value=atual;
 }
-function pieSVG(data){
-  data=data.filter(d=>d.value>0); const total=data.reduce((s,d)=>s+d.value,0);
-  if(!total) return '<p style="color:var(--muted)">Sem dados.</p>';
-  let a=-Math.PI/2, paths=''; const R=62,cx=72,cy=72;
-  data.forEach(d=>{ const f=d.value/total, a2=a+f*2*Math.PI, big=f>0.5?1:0;
-    if(f>0.999){ paths+=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="${d.color}"/>`; }
-    else { const x1=cx+R*Math.cos(a),y1=cy+R*Math.sin(a),x2=cx+R*Math.cos(a2),y2=cy+R*Math.sin(a2);
-      paths+=`<path d="M${cx},${cy} L${x1.toFixed(1)},${y1.toFixed(1)} A${R},${R} 0 ${big} 1 ${x2.toFixed(1)},${y2.toFixed(1)} Z" fill="${d.color}"/>`; }
-    a=a2; });
-  const leg=data.map((d,i)=>`<div class="legenda" style="animation:legIn .4s both;animation-delay:${(i*.08+.25).toFixed(2)}s"><span class="sw" style="background:${d.color}"></span>${esc(d.label)}<b style="color:var(--muted);margin-left:auto">${d.value} (${Math.round(d.value/total*100)}%)</b></div>`).join('');
-  return `<div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap"><svg class="pie" width="144" height="144" viewBox="0 0 144 144">${paths}</svg><div style="flex:1;min-width:150px">${leg}</div></div>`;
+/* ---- Barra divergente: a forma certa para escala ORDENADA (ruim ◀ neutro ▶ bom).
+   O neutro fica em cima do eixo central, metade para cada lado, então bate o olho
+   e já se vê para que lado a massa pende. Cada fatia tem rótulo direto. ---- */
+function barraDiverg(neg,neu,pos,extremos){
+  const n=neg.v+neu.v+pos.v;
+  if(!n) return '<p class="vazio">Nenhuma call classificada no filtro atual.</p>';
+  // o neutro fica metade de cada lado do eixo; a escala é dada pelo MAIOR lado,
+  // então o lado dominante encosta na borda e nada estoura o trilho.
+  const esq=neg.v+neu.v/2, dir=pos.v+neu.v/2;
+  const k=50/Math.max(esq,dir,.0001);          // % de largura por call
+  let x=50-esq*k, i=0, segs='';
+  [neg,neu,pos].forEach(o=>{
+    const w=o.v*k;
+    if(w>0){
+      const cor=corStatus(o.st);
+      segs+=`<div class="seg" style="left:${x.toFixed(2)}%;width:calc(${w.toFixed(2)}% - 2px);background:${cor};color:${txtOn(cor)};animation-delay:${(i*.08).toFixed(2)}s"
+        title="${escA(o.lbl+': '+o.v+' call'+(o.v>1?'s':'')+' · '+Math.round(o.v/n*100)+'% do total')}">${w>=9?o.v:''}</div>`;
+      i++;
+    }
+    x+=w;
+  });
+  const leg=[neg,neu,pos].map(o=>`<span class="it"><i style="background:${corStatus(o.st)}"></i>${esc(o.lbl)} <b>${o.v} · ${Math.round(o.v/n*100)}%</b></span>`).join('');
+  return `<div class="divbar">${segs}<div class="zero"></div></div>
+    <div class="divends"><span>◀ ${esc(extremos[0])}</span><span>${esc(extremos[1])} ▶</span></div>
+    <div class="lg">${leg}</div>`;
+}
+/* ---- Ranking de pessoas: barra de UMA cor (a barra mede quantidade, não identidade);
+   o ponto colorido ao lado do nome é que carrega a identidade, igual aos chips. ---- */
+function rankPessoas(F){
+  const m={};
+  F.forEach(c=>(Array.isArray(c.participantes)?c.participantes:[]).forEach(p=>{
+    if(!m[p])m[p]={n:0,s:0,ns:0,g:0,pd:0};
+    m[p].n++;
+    if(c.score_oportunidade!=null){ m[p].s+=c.score_oportunidade; m[p].ns++; }
+    if(c.resultado==='ganho')m[p].g++; if(c.resultado==='perdido')m[p].pd++;
+  }));
+  const arr=Object.entries(m).map(([p,v])=>({p,n:v.n,g:v.g,pd:v.pd,avg:v.ns?Math.round(v.s/v.ns):null}))
+    .sort((a,b)=>b.n-a.n||a.p.localeCompare(b.p));
+  if(!arr.length) return '<p class="vazio">Nenhum participante marcado nas calls filtradas.<br>Use <b>👤 Participantes</b> no card da call para marcar quem participou.</p>';
+  const max=arr[0].n;
+  return arr.map((x,i)=>{
+    const reg=partPorNome(x.p), org=reg&&reg.organizacao;
+    const st=corScore(x.avg);
+    const sc=x.avg==null?'':`<span class="sc" style="background:${corStatus(st)}22;color:${corStatus(st)}" title="Score médio de oportunidade">score ${x.avg}</span>`;
+    const wl=(x.g||x.pd)?`<span class="n" title="Resultado das calls">${x.g}✓ / ${x.pd}✗</span>`:'';
+    return `<div class="rk" data-n="${escA(x.p)}" onclick="filtrarPessoa(this.dataset.n)" title="Clique para filtrar a tabela por ${escA(x.p)}">
+      <div class="top"><span class="dot" style="background:${corPessoa(x.p)}"></span>
+        <span class="nm">${iconePart(x.p)} ${esc(x.p)}</span>${org?`<span class="org">· ${esc(org)}</span>`:''}
+        <span class="sp"></span>${wl}<span class="n">${x.n} call${x.n>1?'s':''}</span>${sc}</div>
+      <div class="trk"><span style="width:${Math.max(3,x.n/max*100).toFixed(1)}%;background:${corSerie(0)};animation-delay:${(i*.05).toFixed(2)}s"></span></div></div>`;
+  }).join('');
+}
+const MESAB=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+function colunasMes(F){
+  const by={};
+  F.forEach(c=>{ const d=new Date(c.data_call); if(isNaN(d))return;
+    by[d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')]=(by[d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')]||0)+1; });
+  const ks=Object.keys(by).sort();
+  if(ks.length<2) return '';
+  const max=Math.max(...ks.map(k=>by[k]));
+  return `<div class="panel"><h3>📅 Volume de calls por mês</h3>
+    <div class="cols">${ks.map((k,i)=>{
+      const m=+k.slice(5)-1, rot=MESAB[m]+'/'+k.slice(2,4);
+      return `<div class="c" title="${rot}: ${by[k]} call${by[k]>1?'s':''}"><u>${by[k]}</u>
+        <i style="height:${Math.max(4,by[k]/max*100).toFixed(1)}%;background:${corSerie(0)};animation-delay:${(i*.05).toFixed(2)}s"></i><em>${rot}</em></div>`;
+    }).join('')}</div></div>`;
+}
+function relTiles(F){
+  const n=F.length;
+  const cs=F.filter(c=>c.score_oportunidade!=null);
+  const avg=cs.length?Math.round(cs.reduce((s,c)=>s+c.score_oportunidade,0)/cs.length):null;
+  const pos=F.filter(c=>c.sentimento==='positivo').length;
+  const neg=F.filter(c=>c.sentimento==='negativo').length;
+  const g=F.filter(c=>c.resultado==='ganho').length, pd=F.filter(c=>c.resultado==='perdido').length;
+  const pes=new Set(); F.forEach(c=>(Array.isArray(c.participantes)?c.participantes:[]).forEach(p=>pes.add(chaveP(p))));
+  const seg=F.reduce((s,c)=>s+(c.duracao_seg||0),0);
+  const horas=seg>=3600?(seg/3600).toFixed(1).replace('.',',')+'<small> h</small>':Math.round(seg/60)+'<small> min</small>';
+  const t=(v,l,s,cor)=>`<div class="tile" style="--tint:${cor||'var(--line)'}"><div class="v">${v}</div><div class="l">${l}</div><div class="s">${s||'&nbsp;'}</div></div>`;
+  return `<div class="tiles">
+    ${t(n,'Calls no filtro',n?`de ${CALLS.length} no total`:'ajuste os filtros',corSerie(0))}
+    ${t(avg==null?'—':avg,'Score médio',avg==null?'sem score':(avg>=70?'oportunidade forte':avg>=45?'precisa de follow-up':'baixa aderência'),corStatus(corScore(avg)))}
+    ${t(pos+(n?`<small> / ${n}</small>`:''),'Sentimento positivo',n?Math.round(pos/n*100)+'% das calls'+(neg?` · ${neg} negativa${neg>1?'s':''}`:''):'',corStatus('bom'))}
+    ${t(g+(pd?`<small> × ${pd}</small>`:''),'Ganhos × perdidos',(g+pd)?Math.round(g/(g+pd)*100)+'% de aproveitamento':'nenhuma call fechada',corStatus(g>=pd?'bom':'ruim'))}
+    ${t(pes.size,'Pessoas envolvidas',pes.size?'participantes marcados':'marque nos cards',corSerie(3))}
+    ${t(horas,'Tempo gravado',seg?'somando as calls filtradas':'sem duração registrada',corSerie(2))}
+  </div>`;
+}
+function filtrarPessoa(nome){
+  const i=document.getElementById('relBusca'); if(!i) return;
+  i.value = (i.value.trim().toLowerCase()===String(nome).toLowerCase()) ? '' : nome;   // clicar de novo limpa
+  renderRelatorios();
+  const t=document.getElementById('relTable'); if(t) t.scrollIntoView({behavior:'smooth',block:'start'});
 }
 function renderRelatorios(){
   popularFiltroSeg();
   const F=relFiltradas();
   const sent={positivo:0,neutro:0,negativo:0}; F.forEach(c=>{ if(c.sentimento&&sent[c.sentimento]!=null)sent[c.sentimento]++; });
-  const pieSent=pieSVG([{label:'Positivo',value:sent.positivo,color:'#447BBE'},{label:'Neutro',value:sent.neutro,color:'#98A2B8'},{label:'Negativo',value:sent.negativo,color:'#B11313'}]);
-  const m={}; F.forEach(c=>(Array.isArray(c.participantes)?c.participantes:[]).forEach(p=>m[p]=(m[p]||0)+1));
-  const partArr=Object.entries(m).sort((a,b)=>b[1]-a[1]);
-  const piePart=pieSVG(partArr.map(([p,n])=>({label:p,value:n,color:corPessoa(p)})));
-  const sc={}; F.forEach(c=>(Array.isArray(c.participantes)?c.participantes:[]).forEach(p=>{if(!sc[p])sc[p]={n:0,s:0};sc[p].n++;sc[p].s+=(c.score_oportunidade||0);}));
-  const barArr=Object.entries(sc).map(([p,v])=>({p,n:v.n,avg:Math.round(v.s/v.n)})).sort((a,b)=>b.n-a.n);
-  const max=barArr.length?barArr[0].n:1;
-  const bars= barArr.length? barArr.map(x=>{const cor=corPessoa(x.p);return `<div class="bar-row"><div class="lbl"><span><span class="sw" style="background:${cor};margin-right:7px"></span>${esc(x.p)}</span><b>${x.n} call(s) · score ${x.avg}</b></div><div class="bar"><span style="width:${Math.round(x.n/max*100)}%;background:linear-gradient(90deg,${cor},${cor}bb)"></span></div></div>`}).join('') : '<p style="color:var(--muted)">Marque participantes nas calls para ver.</p>';
-  document.getElementById('relCharts').innerHTML=`
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:16px">
-      <div class="panel"><h3>😊 Sentimento das calls</h3>${pieSent}</div>
-      <div class="panel"><h3>🥧 Participação por pessoa</h3>${piePart}</div>
+  const res={ganho:0,perdido:0,andamento:0}; F.forEach(c=>{ const r=c.resultado||'andamento'; if(res[r]!=null)res[r]++; else res.andamento++; });
+  const semClass=F.length-(sent.positivo+sent.neutro+sent.negativo);
+  document.getElementById('relCharts').innerHTML=
+    relTiles(F)+
+    (F.length?`
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px">
+      <div class="panel"><h3>😐 Como as calls terminaram <span style="font-size:12.5px;color:var(--muted);font-weight:400">· sentimento</span></h3>
+        ${barraDiverg({v:sent.negativo,lbl:'Negativo',st:'ruim'},{v:sent.neutro,lbl:'Neutro',st:'neutro'},{v:sent.positivo,lbl:'Positivo',st:'bom'},['negativo','positivo'])}
+        ${semClass>0?`<p style="color:var(--muted);font-size:11.5px;margin-top:9px">${semClass} call(s) sem sentimento — use 🔄 Reanalisar.</p>`:''}</div>
+      <div class="panel"><h3>🎯 Resultado comercial <span style="font-size:12.5px;color:var(--muted);font-weight:400">· win/loss</span></h3>
+        ${barraDiverg({v:res.perdido,lbl:'Perdido',st:'ruim'},{v:res.andamento,lbl:'Em andamento',st:'neutro'},{v:res.ganho,lbl:'Ganho',st:'bom'},['perdido','ganho'])}
+        <p style="color:var(--muted);font-size:11.5px;margin-top:9px">Marque Ganho/Perdido no detalhe da call para alimentar este gráfico.</p></div>
     </div>
-    <div class="panel"><h3>📊 Calls e score por pessoa</h3>${bars}</div>`;
-  const rows=F.map(c=>`<tr><td style="text-align:center"><input type="checkbox" class="relChk" data-id="${c.id}" style="width:auto;margin:0"></td><td>${new Date(c.data_call).toLocaleString('pt-BR')}</td><td>${esc(c.cliente||'—')}</td><td>${esc(segOf(c)||'—')}</td><td>${esc((Array.isArray(c.participantes)?c.participantes:[]).join(', ')||'—')}</td><td>${esc(c.sentimento||'—')}</td><td style="text-align:center">${c.score_oportunidade??'—'}</td></tr>`).join('');
-  document.getElementById('relTable').innerHTML=`<div class="panel"><h3>🧾 Rastreabilidade (${F.length} call${F.length===1?'':'s'})</h3>
-    <div style="overflow:auto"><table class="tbl"><thead><tr><th style="width:34px;text-align:center"><input type="checkbox" id="relAll" onchange="toggleAllRel(this.checked)" title="Selecionar todas" style="width:auto;margin:0"></th><th>Data</th><th>Cliente</th><th>Segmento</th><th>Participantes</th><th>Sentimento</th><th>Score</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+    <div class="panel"><h3>👥 Calls por pessoa <span style="font-size:12.5px;color:var(--muted);font-weight:400">· clique para filtrar</span></h3>${rankPessoas(F)}</div>
+    ${colunasMes(F)}`
+    :'<div class="panel"><p class="vazio">Nenhuma call bate com esses filtros.<br>Limpe o filtro ou amplie o período para ver os gráficos.</p></div>');
+  const rows=F.map(c=>{
+    const part=Array.isArray(c.participantes)?c.participantes:[];
+    const pv=part.slice(0,2).map(p=>`<span class="dotst" style="background:${corPessoa(p)}"></span>${esc(p)}`).join(' ');
+    const stS=c.sentimento==='positivo'?'bom':c.sentimento==='negativo'?'ruim':'neutro';
+    const stR=c.resultado==='ganho'?'bom':c.resultado==='perdido'?'ruim':'neutro';
+    const resTxt=c.resultado==='ganho'?'✅ Ganho':c.resultado==='perdido'?'❌ Perdido':'⏳ Andamento';
+    return `<tr class="clicavel" onclick="if(!event.target.closest('input'))abrir('${c.id}')" title="Abrir a call">
+      <td style="text-align:center" onclick="event.stopPropagation()"><input type="checkbox" class="relChk" data-id="${c.id}" style="width:auto;margin:0"></td>
+      <td class="num" style="text-align:left;white-space:nowrap">${new Date(c.data_call).toLocaleDateString('pt-BR')}<span style="color:var(--muted)"> ${new Date(c.data_call).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</span></td>
+      <td><b>${esc(c.cliente||'—')}</b></td>
+      <td>${esc(segOf(c)||'—')}</td>
+      <td style="white-space:nowrap">${pv||'<span style="color:var(--muted)">—</span>'}${part.length>2?`<span style="color:var(--muted)"> +${part.length-2}</span>`:''}</td>
+      <td style="white-space:nowrap"><span class="dotst" style="background:${corStatus(stS)}"></span>${esc(c.sentimento||'—')}</td>
+      <td style="white-space:nowrap;color:${corStatus(stR)}">${resTxt}</td>
+      <td class="num" style="color:${corStatus(corScore(c.score_oportunidade))};font-weight:600">${c.score_oportunidade??'—'}</td></tr>`;
+  }).join('');
+  document.getElementById('relTable').innerHTML=`<div class="panel"><h3>🧾 Rastreabilidade <span style="font-size:12.5px;color:var(--muted);font-weight:400">· ${F.length} call${F.length===1?'':'s'} · clique na linha para abrir</span></h3>
+    <div style="overflow:auto"><table class="tbl"><thead><tr><th style="width:34px;text-align:center"><input type="checkbox" id="relAll" onchange="toggleAllRel(this.checked)" title="Selecionar todas" style="width:auto;margin:0"></th><th>Data</th><th>Cliente</th><th>Segmento</th><th>Participantes</th><th>Sentimento</th><th>Resultado</th><th style="text-align:right">Score</th></tr></thead><tbody>${rows||'<tr><td colspan="8" class="vazio">Nenhuma call com esses filtros.</td></tr>'}</tbody></table></div></div>`;
 }
 function limparFiltroRel(){ ['relBusca','relDe','relAte','relSeg'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';}); renderRelatorios(); }
 function exportarCSV(){
   const F=relFiltradas();
-  const head=['Data','Cliente','Segmento','Participantes','Sentimento','Score'];
-  const linhas=F.map(c=>[new Date(c.data_call).toLocaleString('pt-BR'), c.cliente||'', segOf(c)||'', (Array.isArray(c.participantes)?c.participantes:[]).join('; '), c.sentimento||'', c.score_oportunidade??'']);
+  const head=['Data','Cliente','Segmento','Participantes','Sentimento','Resultado','Score','Duração (min)'];
+  const linhas=F.map(c=>[new Date(c.data_call).toLocaleString('pt-BR'), c.cliente||'', segOf(c)||'', (Array.isArray(c.participantes)?c.participantes:[]).join('; '), c.sentimento||'', c.resultado||'andamento', c.score_oportunidade??'', c.duracao_seg?Math.round(c.duracao_seg/60):'']);
   const csv=[head,...linhas].map(r=>r.map(x=>'"'+(''+x).replace(/"/g,'""')+'"').join(',')).join('\n');
   const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='relatorio_calls.csv'; a.click(); URL.revokeObjectURL(a.href);
@@ -1464,7 +1674,7 @@ function abrir(id){
       <span style="display:flex;gap:6px">
         <button class="btn-audio" onclick="reanalisarCall('${c.id}',this)" title="Re-roda a IA sobre a transcrição (atualiza segmento, análise e proposta)">🔄 Reanalisar</button>
         <button class="btn-audio" onclick="copiarHandoff('${c.id}',this)">📋 Copiar para CRM</button></span></div>
-      <div class="chips">${part.map(p=>`<span class="chip on" style="background:${corPessoa(p)};border-color:${corPessoa(p)}" data-n="${escA(p)}" onclick="toggleP('${c.id}',this.dataset.n)" title="Clique para desmarcar">${iconePart(p)} ${esc(labelPart(p))} ✕</span>`).join('')}<span class="chip add" onclick="abrirPart('${c.id}')">＋ Atrelar participante</span></div>
+      <div class="chips">${part.map(p=>`<span class="chip on" style="background:${corPessoa(p)};border-color:${corPessoa(p)};color:${txtOn(corPessoa(p))}" data-n="${escA(p)}" onclick="toggleP('${c.id}',this.dataset.n)" title="Clique para desmarcar">${iconePart(p)} ${esc(labelPart(p))} ✕</span>`).join('')}<span class="chip add" onclick="abrirPart('${c.id}')">＋ Atrelar participante</span></div>
       <div class="ctrlrow"><span class="ctrllbl">Resultado</span><div class="chips" id="resChips">${resultadoChips(c)}</div></div>
       <div class="ctrlrow"><span class="ctrllbl">Negociação</span><div class="chips" id="tipoChips">${tipoChips(c)}</div></div></div>
     ${kpis}
