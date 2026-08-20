@@ -1796,12 +1796,35 @@ function renderTranscricao(c){
     + '<div id="diarStatus" style="font-size:13px;color:var(--muted);margin-bottom:8px"></div>'
     + '<div class="transcript">'+esc(c.transcript)+'</div>';
 }
+// Traduz erro cru de API para algo que o usuario possa AGIR. Mensagem tecnica
+// colada na tela ("model_not_found") nao diz a ninguem o que fazer em seguida.
+function erroHumano(msg){
+  const m=String(msg||'');
+  if(/model_not_found|does not exist|decommissioned|deprecated/i.test(m))
+    return 'O modelo de IA usado pela análise foi descontinuado pelo provedor. '
+         + 'Isso é configuração do servidor, não da sua call — avise o suporte.';
+  if(/rate.?limit|429|try again in/i.test(m))
+    return 'Limite gratuito do provedor atingido. Tente de novo em alguns minutos.';
+  if(/timeout|abort/i.test(m))
+    return 'A separação demorou demais e foi interrompida. Calls muito longas podem '
+         + 'estourar o tempo — tente de novo, ou divida a gravação.';
+  if(/failed to fetch|networkerror|load failed/i.test(m))
+    return 'Sem conexão com o servidor. Verifique a internet e tente de novo.';
+  return m;
+}
+
 async function diarizarCall(id){
   const btn=document.getElementById('btnDiar'); const st=document.getElementById('diarStatus');
   if(btn) btn.disabled=true;
   if(st) st.textContent='Separando falas com IA… pode levar 1-2 min em calls longas, aguarde.';
   try{
-    const {data,error}=await sb.functions.invoke(FUNC,{body:{action:'diarizar',call_id:id}});
+    // Sem teto, uma funcao pendurada deixava o botao desabilitado para sempre e
+    // a tela parecia travada. 180s cobre a call longa e ainda devolve o controle.
+    const corte=new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),180000));
+    const {data,error}=await Promise.race([
+      sb.functions.invoke(FUNC,{body:{action:'diarizar',call_id:id}}),
+      corte,
+    ]);
     if(error){ let m=error.message; try{const cx=await error.context.json();m=cx.error||m}catch(_){ } throw new Error(m); }
     if(data&&data.error) throw new Error(data.error);
     const novo=(data&&data.transcript_dialogo)||'';
@@ -1809,7 +1832,7 @@ async function diarizarCall(id){
     const c=CALLS.find(x=>x.id===id); if(c) c.transcript_dialogo=novo;
     if(CUR&&CUR.id===id) CUR.transcript_dialogo=novo;
     document.getElementById('paneT').innerHTML=renderTranscricao(c||{id,transcript:'',transcript_dialogo:novo});
-  }catch(e){ if(st) st.textContent='Erro: '+(e.message||e); if(btn) btn.disabled=false; }
+  }catch(e){ if(st) st.textContent=erroHumano(e.message||e); if(btn) btn.disabled=false; }
 }
 function tab(q){ const a=q==='a';
   document.getElementById('tabA').classList.toggle('active',a);document.getElementById('tabT').classList.toggle('active',!a);
