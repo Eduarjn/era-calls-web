@@ -32,6 +32,19 @@
   .status{font-size:13px;color:var(--muted);text-align:center;min-height:18px}
   .ok{color:var(--blue)} .erro{color:var(--deep)}
   .desc{color:var(--muted);font-size:13px;margin:4px 0 6px}
+  /* ---- seletor de modo de captura ---- */
+  .modos{display:flex;gap:0;border:1px solid var(--line);border-radius:4px;overflow:hidden;margin-top:6px}
+  .modo{flex:1;background:#fff;border:none;border-right:1px solid var(--line);padding:9px 6px;cursor:pointer;
+    font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;
+    color:var(--muted);transition:background .15s,color .15s}
+  .modo:last-child{border-right:none}
+  .modo:hover{background:#F7F8FB}
+  .modo.on{background:var(--navy);color:#fff}
+  .modo.on:hover{background:var(--navy)}
+  select{width:100%;padding:10px 12px;border-radius:4px;border:1px solid var(--line);background:#fff;
+    color:var(--navy);font-size:13.5px;font-family:'Space Grotesk',sans-serif}
+  select:focus{outline:none;border-color:var(--blue)}
+  .hint{font-size:11.5px;color:var(--muted);margin:7px 2px 0;line-height:1.5}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
   /* ---- modo flutuante (só o ícone + timer) ---- */
   .mini{height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;cursor:pointer;background:var(--bg);user-select:none}
@@ -48,7 +61,20 @@
   <div class="rec" id="rec">
     <div class="logo">🎙️</div>
     <h1 style="font-size:24px">Gravador de Calls</h1>
-    <p class="desc">Grava você + cliente (só áudio) e envia direto para análise.</p>
+    <p class="desc">Grava só o áudio e envia direto para análise. Escolha abaixo o que entra na gravação.</p>
+
+    <label>O que gravar</label>
+    <div class="modos">
+      <button class="modo on" id="m_reuniao"    onclick="setModo('reuniao')"    title="Grava o áudio do computador e o seu microfone juntos — o padrão para uma reunião">👥 Reunião</button>
+      <button class="modo"    id="m_computador" onclick="setModo('computador')" title="Grava só o que sai do computador, sem o seu microfone">💻 Só o PC</button>
+      <button class="modo"    id="m_microfone"  onclick="setModo('microfone')"  title="Grava só o microfone — não pede para compartilhar tela">🎤 Só o mic</button>
+    </div>
+    <div id="boxMic" style="display:none">
+      <label>Entrada de áudio</label>
+      <select id="micDev"><option value="">Microfone padrão</option></select>
+      <p class="hint" id="hintMic"></p>
+    </div>
+    <p class="hint" id="hintModo"></p>
 
     <label>Cliente</label>
     <input id="cliente" placeholder="Nome do cliente — Enter já inicia a gravação" autocomplete="off">
@@ -96,38 +122,141 @@ async function init(){
 }
 window.addEventListener('beforeunload',e=>{ if(gravando){ e.preventDefault(); e.returnValue=''; } });
 
+/* ---------------------------------------------------------------------------
+   MODOS DE CAPTURA
+
+   O navegador nao deixa ler o audio do sistema sem o seletor de tela: quem da
+   audio do computador e o getDisplayMedia, e ele SEMPRE pergunta o que
+   compartilhar. Nao e limitacao do gravador, e regra de seguranca do Chrome --
+   pagina nenhuma pode ouvir a maquina as escondidas.
+
+   Por isso sao tres modos:
+     reuniao     computador + microfone (o de sempre)
+     computador  so o que sai do PC, sem o microfone
+     microfone   so a entrada de audio -- NAO abre seletor nenhum
+
+   O modo "microfone" e o unico sem seletor. Com um cabo de audio virtual
+   (VB-Cable, Voicemeeter) o som do computador aparece como se fosse um
+   microfone: escolha esse dispositivo na lista e o PC e gravado sem seletor.
+   O gravador detecta pelo nome e desliga cancelamento de eco e reducao de
+   ruido nesse caso -- num cabo virtual esses filtros so estragam o audio.
+--------------------------------------------------------------------------- */
+let MODO = localStorage.getItem('gravador_modo') || 'reuniao';
+const TEXTO_MODO = {
+  reuniao:    'Grava o computador e o seu microfone. Ao iniciar, escolha a tela e marque "compartilhar áudio".',
+  computador: 'Grava só o que sai do computador — sua voz não entra. Ao iniciar, escolha a tela e marque "compartilhar áudio".',
+  microfone:  'Grava só a entrada de áudio escolhida. Não pede para compartilhar tela.'
+};
+const VIRTUAL = /cable|virtual|voicemeeter|stereo mix|mixagem|loopback|what ?u ?hear/i;
+
+function setModo(m){
+  MODO = m; localStorage.setItem('gravador_modo', m);
+  for (const k of ['reuniao','computador','microfone']){
+    const b = $('m_'+k); if (b) b.className = 'modo' + (k===m ? ' on' : '');
+  }
+  const box = $('boxMic'); if (box) box.style.display = (m==='microfone' ? 'block' : 'none');
+  const h = $('hintModo'); if (h) h.textContent = TEXTO_MODO[m] || '';
+  if (m==='microfone') listarEntradas();
+}
+
+async function listarEntradas(){
+  const sel = $('micDev'); if (!sel) return;
+  try{
+    let devs = await navigator.mediaDevices.enumerateDevices();
+    // Sem permissao concedida os nomes vem vazios; pedimos uma vez so para poder listar.
+    if (!devs.some(d => d.kind==='audioinput' && d.label)){
+      const tmp = await navigator.mediaDevices.getUserMedia({audio:true});
+      tmp.getTracks().forEach(t=>t.stop());
+      devs = await navigator.mediaDevices.enumerateDevices();
+    }
+    const atual = sel.value;
+    sel.innerHTML = '<option value="">Microfone padrão</option>';
+    let temVirtual = false;
+    for (const d of devs.filter(d=>d.kind==='audioinput')){
+      if (!d.deviceId || d.deviceId==='default') continue;
+      const o = document.createElement('option');
+      o.value = d.deviceId; o.textContent = d.label || 'Entrada de áudio';
+      if (VIRTUAL.test(o.textContent)) { o.textContent += '  ← áudio do PC'; temVirtual = true; }
+      sel.appendChild(o);
+    }
+    sel.value = atual;
+    const h = $('hintMic');
+    if (h) h.innerHTML = temVirtual
+      ? 'Encontrei uma entrada virtual: escolhendo ela, o gravador captura o som do computador <b>sem pedir para compartilhar tela</b>.'
+      : 'Para gravar o computador sem seletor de tela, instale um cabo de áudio virtual (VB-Cable) e escolha-o aqui.';
+  }catch(_){ /* sem permissao: fica com o padrao */ }
+}
+
 async function toggle(){ gravando?parar():iniciar(); }
 
 async function iniciar(){
   if(!USER){ setStatus('Faça login no painel primeiro.','erro'); return; }
+  const modo = MODO;
+  let disp=null, mic=null, ac=null;
   try{
-    setStatus('Selecione a TELA INTEIRA e marque "Compartilhar áudio do sistema".');
-    // Só o ÁUDIO é gravado — o vídeo serve apenas para o seletor do navegador e para detectar
-    // quando você para de compartilhar. Nada de mp4: menos processamento, upload menor.
-    const disp=await navigator.mediaDevices.getDisplayMedia({
-      video:true,
-      audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false},
-      systemAudio:'include', selfBrowserSurface:'exclude', monitorTypeSurfaces:'include'
-    });
-    if(!disp.getAudioTracks().length){ setStatus('Não veio áudio do sistema. No navegador, marque "compartilhar áudio".','erro'); disp.getTracks().forEach(t=>t.stop()); return; }
-    const mic=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true}});
-    const ac=new AudioContext(); const dest=ac.createMediaStreamDestination();
-    ac.createMediaStreamSource(new MediaStream(disp.getAudioTracks())).connect(dest);
-    ac.createMediaStreamSource(mic).connect(dest);
+    const fontes=[];
+
+    // --- audio do computador (so existe via getDisplayMedia; o video serve apenas
+    //     para o seletor do navegador e para saber quando o compartilhamento acaba)
+    if(modo!=='microfone'){
+      setStatus('Selecione a TELA INTEIRA e marque "Compartilhar áudio do sistema".');
+      disp=await navigator.mediaDevices.getDisplayMedia({
+        video:true,
+        audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false},
+        systemAudio:'include', selfBrowserSurface:'exclude', monitorTypeSurfaces:'include'
+      });
+      if(!disp.getAudioTracks().length){
+        setStatus('Não veio áudio do computador. Refaça e marque "compartilhar áudio" no seletor.','erro');
+        disp.getTracks().forEach(t=>t.stop()); return;
+      }
+      fontes.push(new MediaStream(disp.getAudioTracks()));
+    }
+
+    // --- microfone (ou o cabo virtual que carrega o som do PC)
+    if(modo!=='computador'){
+      const sel=$('micDev'); const id=sel?sel.value:'';
+      const nome=(sel&&sel.selectedOptions[0]?sel.selectedOptions[0].textContent:'')||'';
+      const virtual=VIRTUAL.test(nome);            // cabo virtual: sem filtros
+      mic=await navigator.mediaDevices.getUserMedia({audio:{
+        ...(id?{deviceId:{exact:id}}:{}),
+        echoCancellation:!virtual, noiseSuppression:!virtual, autoGainControl:!virtual
+      }});
+      fontes.push(mic);
+    }
+
+    if(!fontes.length){ setStatus('Nenhuma fonte de áudio selecionada.','erro'); return; }
+
+    ac=new AudioContext(); const dest=ac.createMediaStreamDestination();
+    fontes.forEach(f=>ac.createMediaStreamSource(f).connect(dest));
     chunks=[]; mediaRec=new MediaRecorder(dest.stream,{mimeType:'audio/webm'});
     mediaRec.ondataavailable=e=>{ if(e.data.size)chunks.push(e.data); };
-    mediaRec.onstop=async()=>{ disp.getTracks().forEach(t=>t.stop()); mic.getTracks().forEach(t=>t.stop()); try{ac.close()}catch(_){} await enviar(); };
-    const vt=disp.getVideoTracks()[0]; if(vt) vt.addEventListener('ended',()=>{ if(gravando) parar(); });
+    mediaRec.onstop=async()=>{
+      if(disp) disp.getTracks().forEach(t=>t.stop());
+      if(mic) mic.getTracks().forEach(t=>t.stop());
+      try{ac.close()}catch(_){}
+      await enviar();
+    };
+    // parar de compartilhar a tela encerra a gravacao (so existe se houve seletor)
+    if(disp){ const vt=disp.getVideoTracks()[0]; if(vt) vt.addEventListener('ended',()=>{ if(gravando) parar(); }); }
+
     mediaRec.start();
     gravando=true; t0=Date.now(); tick=setInterval(timerTick,500);
     $('btnRec').textContent='⏹ Parar'; $('btnRec').className='btn btn-stop';
     $('btnReenviar').style.display='none';
-    setStatus('<span class="dot"></span> Gravando…');
+    const rotulo={reuniao:'computador + microfone',computador:'só o computador',microfone:'só o microfone'}[modo];
+    setStatus('<span class="dot"></span> Gravando ('+rotulo+')…');
     syncMini();
     // Vira ícone flutuante automaticamente para você voltar à reunião.
     if(!pipWin){ try{ await flutuar(); }catch(_){ /* sem gesto/suporte: use o botão Flutuar */ } }
-  }catch(e){ setStatus('Não consegui iniciar: '+(e.message||e),'erro'); }
+  }catch(e){
+    if(disp) disp.getTracks().forEach(t=>t.stop());
+    if(mic) mic.getTracks().forEach(t=>t.stop());
+    if(ac){ try{ac.close()}catch(_){} }
+    const msg=(e&&e.name==='NotAllowedError') ? 'Captura cancelada.' : ('Não consegui iniciar: '+(e.message||e));
+    setStatus(msg,'erro');
+  }
 }
+
 function parar(){ if(!mediaRec) return; gravando=false; clearInterval(tick);
   ultimaDur=Math.round((Date.now()-t0)/1000);
   $('btnRec').textContent='🔴 Gravar'; $('btnRec').className='btn btn-rec';
@@ -261,6 +390,7 @@ function syncMini(){
   const h=d.getElementById('miniHint'); if(h) h.textContent=gravando?'gravando · clique p/ abrir':'clique p/ abrir o gravador';
 }
 
+setModo(MODO);   // aplica o modo salvo (depois das declaracoes, senao cai na TDZ do let)
 init();
 </script>
 </body>
