@@ -117,8 +117,57 @@ async function init(){
   $('cliente').addEventListener('input',()=>localStorage.setItem('gravador_cliente',$('cliente').value));
   $('cliente').addEventListener('keydown',e=>{ if(e.key==='Enter'&&!gravando&&!$('btnRec').disabled) iniciar(); });
   const { data:{ session } } = await sb.auth.getSession();
-  if(session){ USER=session.user; $('btnRec').disabled=false; setStatus('Pronto para gravar.'); }
+  if(session){ USER=session.user; $('btnRec').disabled=false; setStatus('Pronto para gravar.'); ouvirAgenda(); }
   else { setStatus('Entre no painel primeiro (aba principal) e reabra o gravador.', 'erro'); }
+}
+
+/* ---------------------------------------------------------------------------
+   AGENDAMENTO → GRAVAÇÃO AUTOMÁTICA
+   O módulo de agendamento (InteligenciaCalls/agendamento) insere comandos em
+   agenda_comandos_desktop no horário da reunião. Aqui a gente escuta via Realtime,
+   abre o Meet, preenche o cliente e inicia a gravação sem clique. Ao terminar,
+   o call_id gerado pelo quick-responder é gravado de volta no agendamento.
+   --------------------------------------------------------------------------- */
+let AGENDAMENTO_ID=null;
+async function ouvirAgenda(){
+  // 1) comandos que ficaram pendentes enquanto o gravador estava fechado (últimos 20 min)
+  const desde=new Date(Date.now()-20*60*1000).toISOString();
+  const { data:pend } = await sb.from('agenda_comandos_desktop').select('*')
+    .eq('status','pendente').gte('created_at',desde).order('created_at');
+  for(const c of (pend||[])) await executarComando(c);
+  // 2) daqui em diante, em tempo real
+  sb.channel('agenda-comandos')
+    .on('postgres_changes',{ event:'INSERT', schema:'public', table:'agenda_comandos_desktop' },
+        ({ new:cmd })=>executarComando(cmd))
+    .subscribe();
+}
+async function executarComando(cmd){
+  try{
+    await sb.from('agenda_comandos_desktop').update({status:'recebido'}).eq('id',cmd.id);
+    if(cmd.acao==='iniciar_gravacao'){
+      if(gravando){ throw new Error('já existe uma gravação em andamento'); }
+      AGENDAMENTO_ID=cmd.agendamento_id;
+      const p=cmd.payload||{};
+      if(p.cliente){ $('cliente').value=p.cliente; localStorage.setItem('gravador_cliente',p.cliente); }
+      if(p.meet_url) window.open(p.meet_url,'_blank');
+      setStatus('Reunião agendada começando — iniciando gravação automática…');
+      await iniciar();
+      if(!gravando) throw new Error('getDisplayMedia não iniciou (usuário cancelou o compartilhamento?)');
+      // trava de segurança: para sozinho no fim previsto (+15 min)
+      if(p.duracao_max_seg) setTimeout(()=>{ if(gravando) parar(); }, p.duracao_max_seg*1000);
+    } else if(cmd.acao==='parar_gravacao'){
+      if(gravando) parar();
+    }
+    await sb.from('agenda_comandos_desktop').update({status:'executado',executado_em:new Date().toISOString()}).eq('id',cmd.id);
+  }catch(e){
+    await sb.from('agenda_comandos_desktop').update({status:'erro',payload:{...(cmd.payload||{}),erro:String(e.message||e)}}).eq('id',cmd.id);
+    setStatus('Gravação automática falhou: '+(e.message||e),'erro');
+  }
+}
+async function vincularCall(callId){
+  if(!AGENDAMENTO_ID||!callId) return;
+  await sb.from('agenda_agendamentos').update({call_id:callId}).eq('id',AGENDAMENTO_ID);
+  AGENDAMENTO_ID=null;
 }
 window.addEventListener('beforeunload',e=>{ if(gravando){ e.preventDefault(); e.returnValue=''; } });
 
@@ -325,6 +374,7 @@ async function subirEAnalisar(){
   const {data,error}=await sb.functions.invoke(FUNC,{body:{audio_path:ultimoPath,cliente:ultimoCliente,duracao_seg:ultimaDur||null}});
   if(error){ let m=error.message; try{const c=await error.context.json();m=c.error||m}catch(_){ } throw new Error(m); }
   if(data&&data.error) throw new Error(data.error);
+  try{ await vincularCall(data&&data.id); }catch(_){ }   // liga a call ao agendamento (se veio da agenda)
   if(data&&data.status==='parcial') setStatus('Salvo! ✓ A transcrição está no painel. A análise não completou (limite do Groq) — abra a call e clique em "Separar falas"/reprocesse mais tarde.','ok');
   else setStatus('Analisado! ✓ Veja no painel.','ok');
   ultimoMp3=null; ultimoPath=null; $('btnReenviar').style.display='none';
