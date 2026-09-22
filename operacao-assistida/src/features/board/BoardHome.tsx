@@ -32,6 +32,7 @@ export function BoardHome() {
   const cards = useCards(boardId)
   const usuarios = useUsuarios()
   const visao = useUI((s) => s.visao)
+  const setVisao = useUI((s) => s.setVisao)
   const filtros = useUI((s) => s.filtros)
   const abrirQuickAdd = useUI((s) => s.abrirQuickAdd)
   const abrirDesfecho = useUI((s) => s.abrirDesfecho)
@@ -109,7 +110,8 @@ export function BoardHome() {
         <Stat n={emRisco} l="em risco" cor={emRisco ? 'var(--red)' : undefined} />
         <Stat n={aguardando.length} l="p/ finalizar" cor={aguardando.length ? 'var(--accent)' : undefined} />
         <Stat n={finalizados.length} l="finalizados" />
-        <button className="btn btn-primary self-center" onClick={() => fases[0] && abrirQuickAdd(fases[0].id)} title="Atalho: N">
+        {/* O formulário rápido vive na coluna do Kanban: nas outras visões o clique não mostrava nada. */}
+        <button className="btn btn-primary self-center" onClick={() => { if (!fases[0]) return; if (visao !== 'kanban') setVisao('kanban'); abrirQuickAdd(fases[0].id) }} title="Atalho: N">
           + Novo cliente
         </button>
       </div>
