@@ -1,0 +1,97 @@
+@import "tailwindcss";
+
+/* ============================================================
+   Tokens da Inteligência de Calls (espelho do :root do index.html).
+   Mantenha em sincronia. Cor nova aqui só se codificar informação
+   (fase, saúde, tipo de acionamento).
+   ============================================================ */
+:root{
+  --bg:#F4F5F8;--bg2:#ffffff;--card:#ffffff;--card2:#EDF0F5;
+  --txt:#141B3C;--ink:#2A3050;--muted:#6A7186;--line:#DDE1EA;
+  --navy:#141B3C;--accent:#DF1F2D;--accent2:#2B3784;--beige:#FBE9EA;
+  --green:#0E8A52;--amber:#B8730D;--red:#C0161F;--blue:#2F62B8;
+  --shadow:0 1px 2px rgba(20,27,60,.05),0 8px 24px rgba(20,27,60,.06);
+  --shadow-lift:0 4px 8px rgba(20,27,60,.10),0 18px 40px rgba(20,27,60,.16);
+  --soft:#fff;--soft2:#EDF0F5;--soft3:#F8F9FB;--bar:#E7EAF1;--modal:#fff;--head:#ffffff;
+}
+[data-theme="dark"]{
+  --bg:#0E1322;--bg2:#131A2E;--card:#151C33;--card2:#1C2440;
+  --txt:#EDF0F8;--ink:#C6CCE0;--muted:#8A92AC;--line:#252E4D;
+  --navy:#EDF0F8;--accent:#E8323F;--accent2:#8FA6E8;--beige:#3A2430;
+  --green:#35B87A;--amber:#E0A340;--red:#E85560;--blue:#5B8FDE;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);
+  --shadow-lift:0 6px 12px rgba(0,0,0,.5),0 24px 48px rgba(0,0,0,.5);
+  --soft:#151C33;--soft2:#1C2440;--soft3:#182038;--bar:#232C4C;--modal:#151C33;--head:#131A2E;
+}
+
+/* Expõe os tokens como utilitários Tailwind: bg-card, text-muted, border-line, text-accent… */
+@theme inline {
+  --color-bg: var(--bg);        --color-bg2: var(--bg2);
+  --color-card: var(--card);    --color-card2: var(--card2);
+  --color-txt: var(--txt);      --color-ink: var(--ink);
+  --color-muted: var(--muted);  --color-line: var(--line);
+  --color-navy: var(--navy);    --color-accent: var(--accent);
+  --color-accent2: var(--accent2); --color-beige: var(--beige);
+  --color-green: var(--green);  --color-amber: var(--amber);
+  --color-red: var(--red);      --color-blue: var(--blue);
+  --color-soft: var(--soft);    --color-soft2: var(--soft2);   --color-soft3: var(--soft3);
+  --color-head: var(--head);    --color-modal: var(--modal);
+  --font-sans: 'Space Grotesk', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+  --radius-box: 6px;   /* containers */
+  --radius-ctl: 4px;   /* controles */
+  --radius-badge: 3px; /* badges — nada de pill */
+  --shadow-card: var(--shadow);
+  --shadow-lift: var(--shadow-lift);
+}
+
+*{box-sizing:border-box}
+html,body,#root{min-height:100vh}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-sans);
+  background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+  background-size:44px 44px;background-position:-1px -1px;transition:background .35s,color .35s}
+h1,h2,h3{font-family:var(--font-sans);letter-spacing:-.01em;margin:0;color:var(--navy)}
+
+/* Rótulo técnico (mono, uppercase) — igual ao <label> da Calls */
+.lbl{font-size:11px;color:var(--muted);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.08em}
+
+/* Botões — mesmos três níveis da Calls */
+.btn{border:none;border-radius:4px;padding:10px 16px;font-weight:600;cursor:pointer;font-size:14px;
+  display:inline-flex;align-items:center;gap:8px;transition:transform .1s,box-shadow .2s,opacity .2s,background .15s,border-color .15s,color .15s;font-family:var(--font-sans);line-height:1}
+.btn:hover{transform:translateY(-1px)} .btn:active{transform:translateY(1px) scale(.985)}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-primary{background:var(--accent);color:#fff;box-shadow:0 2px 0 var(--red)}
+.btn-primary:hover{background:var(--red);box-shadow:0 1px 0 var(--red)}
+.btn-ghost{background:transparent;color:var(--navy);border:1px solid var(--line)}
+.btn-ghost:hover{border-color:var(--accent2);color:var(--accent2)}
+.btn-soft{background:transparent;color:var(--muted);border:1px solid var(--line)}
+.btn-soft:hover{color:var(--navy)}
+.btn-sm{padding:7px 11px;font-size:13px}
+
+input,select,textarea{width:100%;padding:10px 12px;border-radius:4px;border:1px solid var(--line);background:var(--bg2);color:var(--navy);font-size:14px;font-family:var(--font-sans)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent2);box-shadow:0 0 0 3px rgba(68,123,190,.15)}
+
+/* Foco visível no teclado, em tudo */
+:focus-visible{outline:2px solid var(--accent2);outline-offset:2px}
+
+/* Barra de progresso do topo */
+.topbar{position:fixed;top:0;left:0;height:3px;width:0;background:var(--accent);z-index:99;transition:width .45s ease,opacity .5s;pointer-events:none}
+
+/* Abas do menu principal — idênticas às da Calls */
+.viewnav{display:flex;gap:2px;margin-bottom:22px;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+.vtab{padding:10px 16px 12px;background:transparent;color:var(--muted);border:none;cursor:pointer;font-weight:600;font-size:14px;font-family:var(--font-sans);position:relative;transition:color .15s;text-decoration:none}
+.vtab:hover{color:var(--navy)}
+.vtab::after{content:'';position:absolute;left:12px;right:12px;bottom:-1px;height:3px;background:var(--accent);transform:scaleX(0);transform-origin:left;transition:transform .22s cubic-bezier(.2,.8,.2,1)}
+.vtab.active{color:var(--navy)} .vtab.active::after{transform:scaleX(1)}
+
+/* Skeleton shimmer */
+.skel{position:relative;overflow:hidden;background:var(--soft2);border-radius:4px}
+.skel::after{content:'';position:absolute;inset:0;transform:translateX(-100%);
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);animation:shimmer 1.3s infinite}
+[data-theme="dark"] .skel::after{background:linear-gradient(90deg,transparent,rgba(255,255,255,.08),transparent)}
+@keyframes shimmer{100%{transform:translateX(100%)}}
+
+.viewfade{animation:viewIn .4s cubic-bezier(.2,.8,.2,1) both}
+@keyframes viewIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}}

@@ -168,6 +168,12 @@
   .kpi .l{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;margin-top:3px}
   .detgrid{columns:2 300px;column-gap:13px}
   .detgrid .rcard{break-inside:avoid}
+  /* Aviso de call sem analise (ou com analise pela metade) */
+  .aviso{border-left-color:var(--amber,#f0a500)!important;background:rgba(240,165,0,.08)}
+  .aviso h3{color:var(--amber,#f0a500)}
+  .aviso p{font-size:13px;line-height:1.6;margin:4px 0 0}
+  .aviso .motivo{color:var(--muted);font-size:12px;margin-top:6px;word-break:break-word}
+  .aviso .acts{margin-top:11px;display:flex;gap:8px;flex-wrap:wrap}
   .prop{border-left:3px solid var(--accent);background:var(--soft)}
   .propwrap{overflow-x:auto}
   .proptab{width:100%;border-collapse:collapse;font-size:13.5px}
@@ -374,6 +380,7 @@
       <button class="vtab" id="nav-rel" onclick="view('rel')">📈 Relatórios</button>
       <button class="vtab" id="nav-base" onclick="view('base')">📚 Base</button>
       <button class="vtab" id="nav-usuarios" onclick="view('usuarios')">👥 Usuários</button>
+      <a class="vtab" id="nav-oa" href="operacao-assistida/" style="text-decoration:none">🛠️ Operação Assistida</a>
     </div>
 
     <section id="view-calls">
@@ -852,6 +859,8 @@ function mostrarApp(user){
   document.getElementById('app').classList.remove('hidden');
   document.getElementById('userEmail').textContent=user.email;
   carregar();
+  // Volta da Operação Assistida direto na aba pedida (ex.: /#rel)
+  const aba=(location.hash||'').slice(1); if(aba && document.getElementById('view-'+aba)) view(aba);
 }
 async function sair(){ await sb.auth.signOut(); location.reload(); }
 function aplicarTema(t){
@@ -1052,7 +1061,7 @@ function cardEl(c,i){
   const d=document.createElement('div'); d.className='call'; d.style.animationDelay=(i*.04)+'s'; d.onclick=()=>abrir(c.id);
   d.innerHTML=`<div class="name">${esc(c.cliente||'Cliente não identificado')}</div>
     <div class="meta">${new Date(c.data_call).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</div>
-    <div class="badges"><span class="badge ${cls}">${esc(c.sentimento||'—')}</span><span class="badge b-score">Score ${c.score_oportunidade??'—'}</span>${escadaBadge(c)}${c.resultado==='ganho'?'<span class="badge b-pos">✅ Ganho</span>':c.resultado==='perdido'?'<span class="badge b-neg">❌ Perdido</span>':''}</div>
+    <div class="badges"><span class="badge ${cls}">${esc(c.sentimento||'—')}</span><span class="badge b-score">Score ${c.score_oportunidade??'—'}</span>${escadaBadge(c)}${c.resultado==='ganho'?'<span class="badge b-pos">✅ Ganho</span>':c.resultado==='perdido'?'<span class="badge b-neg">❌ Perdido</span>':''}${temAnalise(c)?'':'<span class="badge b-neg" title="A IA não concluiu a análise desta call — abra e clique em Analisar agora">⚠️ sem análise</span>'}</div>
     ${partHtml}
     <div class="cardacts" onclick="event.stopPropagation()">
       <button onclick="abrirPart('${c.id}')" title="Atrelar participantes / parceiros a esta call">👤 Participantes</button>
@@ -1329,19 +1338,75 @@ async function toggleP(id,nome){
   if(document.getElementById('ovDet').classList.contains('show') && CUR && CUR.id===id) abrir(id);
 }
 function segOf(c){ return (c.segmento||(c.analise&&c.analise.segmento)||'').toString().trim(); }
+/* Campos tecnicos (progresso do map, motivo do erro) nao contam como analise. */
+function temAnalise(c){
+  const a=c&&c.analise; if(!a||typeof a!=='object') return false;
+  return Object.keys(a).some(k=>k[0]!=='_');
+}
+/* Banner honesto: sem analise a tela precisa DIZER por que, e nao so mostrar tracos. */
+function avisoAnalise(c){
+  const temT=!!(c.transcript||'').trim();
+  const ok=temAnalise(c);
+  const parcial=(c.status==='parcial')||!!(c.analise&&c.analise._erro);
+  if(ok&&!parcial) return '';
+  const motivo=c.erro||(c.analise&&c.analise._erro)||'';
+  const map=c.analise&&c.analise._map;
+  const prog=(map&&Array.isArray(map.notas)&&map.notas.length)
+    ? `<p class="motivo">Progresso guardado: ${map.notas.length} trecho(s) já resumido(s) — a próxima passada continua daí.</p>` : '';
+  if(!temT) return `<div class="rcard aviso" id="avisoAnalise"><h3>⚠️ Call sem transcrição</h3>
+    <p class="aviso-msg">Esta call não tem texto transcrito, então não há o que analisar. Reenvie o áudio pelo botão de upload.</p>
+    ${motivo?`<p class="motivo">Motivo registrado: ${esc(motivo)}</p>`:''}</div>`;
+  return `<div class="rcard aviso" id="avisoAnalise">
+    <h3>⚠️ ${ok?'Análise incompleta':'Esta call ainda não foi analisada'}</h3>
+    <p class="aviso-msg">A transcrição está salva, mas a IA não terminou a análise${map?' (call longa: ela é feita em trechos)':''}. Clique abaixo — o painel continua de onde parou, quantas passadas forem necessárias.</p>
+    ${motivo?`<p class="motivo">Motivo: ${esc(motivo)}</p>`:''}
+    ${prog}
+    <div class="acts"><button class="btn btn-soft" onclick="reanalisarCall('${c.id}',this)">▶️ ${ok?'Continuar análise':'Analisar agora'}</button></div></div>`;
+}
+/* Reanalisa e, se a call for longa, CONTINUA sozinho.
+   A Edge Function tem 150s e o Groq grátis impõe esperas de rate limit: uma call
+   de ~1h não fecha numa passada só. Cada passada devolve o progresso (trechos
+   resumidos) e o backend guarda esse progresso, então aqui é só chamar de novo
+   enquanto estiver avançando — em vez de o usuário clicar 🔄 e receber traços. */
+const MAX_PASSADAS = 8;
 async function reanalisarCall(id,btn){
   const c=CALLS.find(x=>x.id===id); if(!c) return;
-  const txt0=btn?btn.textContent:''; if(btn){ btn.disabled=true; btn.textContent='Reanalisando…'; }
+  const txt0=(btn&&btn.textContent)||'🔄 Reanalisar';
+  const passo=(t)=>{
+    if(btn&&btn.isConnected) btn.textContent=t;
+    const av=document.querySelector('#avisoAnalise .aviso-msg'); if(av) av.textContent=t;
+  };
+  if(btn) btn.disabled=true;
   try{
-    const {data,error}=await sb.functions.invoke(FUNC,{body:{action:'reanalisar',call_id:id}});
-    if(error){ let m=error.message; try{const cx=await error.context.json();m=cx.error||m}catch(_){ } throw new Error(m); }
-    if(data&&data.error) throw new Error(data.error);
-    const a=data.analise||{};
-    c.analise=a; c.resumo=a.resumo??c.resumo; c.sentimento=a.sentimento??null;
-    c.score_oportunidade=a.score_oportunidade??null; c.segmento=a.segmento??null;
-    if(CUR&&CUR.id===id) CUR=c;
-    abrir(id); render();
-  }catch(e){ alert('Erro ao reanalisar: '+(e.message||e)); if(btn){ btn.disabled=false; btn.textContent=txt0; } }
+    let ultimo=-1;
+    for(let volta=1; volta<=MAX_PASSADAS; volta++){
+      passo(volta===1?'Analisando…':('Continuando a análise… (passada '+volta+')'));
+      const {data,error}=await sb.functions.invoke(FUNC,{body:{action:'reanalisar',call_id:id}});
+      if(error){ let m=error.message; try{const cx=await error.context.json();m=cx.error||m}catch(_){ } throw new Error(m); }
+      if(data&&data.error) throw new Error(data.error);
+      const a=data.analise||{};
+      c.analise=a; c.status=data.status||c.status; c.erro=data.erro||null;
+      if(data.status!=='parcial'){
+        c.resumo=a.resumo??c.resumo; c.sentimento=a.sentimento??null;
+        c.score_oportunidade=a.score_oportunidade??null; c.segmento=a.segmento??null;
+        if(CUR&&CUR.id===id) CUR=c;
+        abrir(id); render();
+        return;
+      }
+      // Parcial: só insiste enquanto houver avanço. Sem avanço = limite do Groq mesmo.
+      const p=data.progresso, feitos=p?p.feitos:-1;
+      if(!p||feitos<=ultimo) throw new Error(data.erro||'A IA não conseguiu concluir a análise agora (limite do Groq). Tente de novo em alguns minutos — o progresso já feito fica guardado.');
+      ultimo=feitos;
+      passo('Analisando trecho '+feitos+'/'+p.total+'…');
+    }
+    throw new Error('A análise não fechou em '+MAX_PASSADAS+' passadas. O progresso está guardado: clique de novo para continuar.');
+  }catch(e){
+    if(CUR&&CUR.id===id){ CUR=c; abrir(id); }
+    render();
+    alert('Erro ao reanalisar: '+(e.message||e));
+  }finally{
+    if(btn&&btn.isConnected){ btn.disabled=false; btn.textContent=txt0; }
+  }
 }
 async function reanalisarSemSegmento(){
   const btn=document.getElementById('btnBackfill'), msg=document.getElementById('backfillMsg');
@@ -1677,6 +1742,7 @@ function abrir(id){
       <div class="chips">${part.map(p=>`<span class="chip on" style="background:${corPessoa(p)};border-color:${corPessoa(p)};color:${txtOn(corPessoa(p))}" data-n="${escA(p)}" onclick="toggleP('${c.id}',this.dataset.n)" title="Clique para desmarcar">${iconePart(p)} ${esc(labelPart(p))} ✕</span>`).join('')}<span class="chip add" onclick="abrirPart('${c.id}')">＋ Atrelar participante</span></div>
       <div class="ctrlrow"><span class="ctrllbl">Resultado</span><div class="chips" id="resChips">${resultadoChips(c)}</div></div>
       <div class="ctrlrow"><span class="ctrllbl">Negociação</span><div class="chips" id="tipoChips">${tipoChips(c)}</div></div></div>
+    ${avisoAnalise(c)}
     ${kpis}
     <div class="rcard"><h3>📌 Resumo</h3><p>${esc(c.resumo||a.resumo||'—')}</p></div>
     ${propostaHtml(a)}

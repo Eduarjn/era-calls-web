@@ -1,0 +1,8 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "cd operacao-assistida && npm ci",
+  "buildCommand": "node build.mjs",
+  "outputDirectory": "public_build",
+  "cleanUrls": true,
+  "trailingSlash": true
+}
