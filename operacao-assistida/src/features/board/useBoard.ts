@@ -32,6 +32,12 @@ export function useUsuarioAtual() {
   return useQuery({ queryKey: ['usuario-atual'], queryFn: () => getRepository().usuarioAtual(), staleTime: Infinity })
 }
 
+/** Papel de quem está logado: gestor = administrador; visualizador = só vê (o banco também bloqueia a escrita). */
+export function usePermissao() {
+  const eu = useUsuarioAtual()
+  return { carregado: !!eu.data, admin: eu.data?.papel === 'gestor', somenteLeitura: eu.data?.papel === 'visualizador' }
+}
+
 export function useUsuarios() {
   return useQuery({ queryKey: chaves.usuarios, queryFn: () => getRepository().listarUsuarios(), staleTime: 5 * 60_000 })
 }

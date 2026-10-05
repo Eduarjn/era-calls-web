@@ -2,15 +2,21 @@ import { useMemo, useState } from 'react'
 import type { Board, Card, NovoCard, Usuario } from '@/domain/types'
 import { useCriarCard } from '@/features/board/mutations'
 import { useUI } from '@/store/uiStore'
+import { CHAVE_INTEGRACAO, CHAVE_INTEGRACAO_QUAL, CHAVE_TIP, CHAVE_VENDEDOR, VENDEDORES_INTERNOS } from '@/domain/comercial'
 
 interface Props { board: Board; usuarios: Usuario[]; onFechar: () => void }
 
-type Alvo = 'ignorar' | 'clienteNome' | 'clienteId' | 'dataEntrada' | 'responsavel' | 'segmento' | 'produtoPlano' | 'contatoNome' | 'contatoEmail' | 'contatoTelefone' | 'tags' | 'prioridade'
+type Alvo = 'ignorar' | 'clienteNome' | 'clienteId' | 'dataEntrada' | 'responsavel' | 'segmento' | 'produtoPlano' | 'contatoNome' | 'contatoEmail' | 'contatoTelefone' | 'tags' | 'prioridade' | 'vendedor' | 'tip' | 'integracao' | 'integracaoQual'
 const ALVOS: { id: Alvo; rotulo: string }[] = [
   { id: 'ignorar', rotulo: '— ignorar —' }, { id: 'clienteNome', rotulo: 'Cliente (obrigatório)' }, { id: 'clienteId', rotulo: 'Id externo' }, { id: 'dataEntrada', rotulo: 'Data de entrada' },
   { id: 'responsavel', rotulo: 'Responsável (nome)' }, { id: 'segmento', rotulo: 'Segmento' }, { id: 'produtoPlano', rotulo: 'Produto/plano' }, { id: 'contatoNome', rotulo: 'Contato' },
   { id: 'contatoEmail', rotulo: 'E-mail' }, { id: 'contatoTelefone', rotulo: 'Telefone' }, { id: 'tags', rotulo: 'Tags' }, { id: 'prioridade', rotulo: 'Prioridade' },
+  { id: 'vendedor', rotulo: 'Vendedor interno' }, { id: 'tip', rotulo: 'Cliente da TIP (sim/não)' },
+  { id: 'integracao', rotulo: 'Integração (sim/não)' }, { id: 'integracaoQual', rotulo: 'Qual integração' },
 ]
+
+/** "sim", "s", "x", "1", "true", "tip" valem sim; vazio e "não" valem não. */
+const ehSim = (v: string) => /^(s|sim|x|1|t(rue)?|y(es)?|tip)$/i.test(v.trim())
 
 /** Detecta separador e quebra em linhas/colunas (suporta aspas). */
 export function parseTabela(texto: string): string[][] {
@@ -83,7 +89,23 @@ export function Importar({ board, usuarios, onFechar }: Props) {
       contatoPrincipal: get('contatoNome') || get('contatoEmail') || get('contatoTelefone') ? { nome: get('contatoNome'), email: get('contatoEmail') || undefined, telefone: get('contatoTelefone') || undefined } : undefined,
       tags: get('tags') ? get('tags').split(/[;,|]/).map((t) => t.trim()).filter(Boolean) : [],
       prioridade: (['baixa', 'media', 'alta', 'critica'] as Card['prioridade'][]).find((p) => prio.startsWith(p.slice(0, 3))) ?? 'media',
+      camposCustomizados: comerciais(get),
     }
+  }
+
+  /** Campos comerciais da planilha → camposCustomizados do card (só o que veio preenchido). */
+  function comerciais(get: (a: Alvo) => string): Record<string, string | boolean> {
+    const out: Record<string, string | boolean> = {}
+    const vend = get('vendedor')
+    // Casa com o nome do interno mesmo escrito só o primeiro nome ("nicole" → "Nicole").
+    const interno = VENDEDORES_INTERNOS.find((v) => v.toLowerCase() === vend.toLowerCase() || v.toLowerCase().split(' ')[0] === vend.toLowerCase())
+    if (vend) out[CHAVE_VENDEDOR] = interno ?? vend
+    if (ehSim(get('tip'))) out[CHAVE_TIP] = true
+    const integ = get('integracao')
+    if (integ) out[CHAVE_INTEGRACAO] = ehSim(integ) ? 'sim' : 'nao'
+    const qual = get('integracaoQual')
+    if (qual) { out[CHAVE_INTEGRACAO_QUAL] = qual; if (!integ) out[CHAVE_INTEGRACAO] = 'sim' }
+    return out
   }
 
   async function importar() {

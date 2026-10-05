@@ -1,7 +1,9 @@
 import { useMemo } from 'react'
 import { format } from 'date-fns'
-import { useBoards, useBoard, useCards, useUsuarios } from './useBoard'
+import { useBoards, useBoard, useCards, useUsuarios, usePermissao } from './useBoard'
 import { useReconciliacao } from './reconciliacao'
+import { precisaAjustarEsteira, useMigracaoDuasSemanas } from './migracao2s'
+import { useLeituraTicketsAutomatica } from '@/features/integracao/TicketMovidesk'
 import { useFinalizarCard } from './mutations'
 import { Kanban } from '@/features/kanban/Kanban'
 import type { Derivados } from '@/features/kanban/CardKanban'
@@ -14,9 +16,12 @@ import { Calendario } from '@/features/calendario/Calendario'
 import { Painel } from '@/features/painel/Painel'
 import { ConfigFases } from '@/features/config/ConfigFases'
 import { Importar } from '@/features/importacao/Importar'
+import { Usuarios } from '@/features/usuarios/Usuarios'
 import { ConfigIntegracaoTela } from '@/features/integracao/ConfigIntegracao'
 import { useConfigIntegracao, useSincronizacao } from '@/features/integracao/useIntegracao'
 import { useUI } from '@/store/uiStore'
+import { Etiqueta } from '@/ui/Badge'
+import { COR_PRIORIDADE, ICONE_PRIORIDADE } from '@/domain/destaque'
 import { hojeISO } from '@/domain/datas'
 import { aguardandoFinalizacao, calcularSaude, foraDaEsteira, fasesOrdenadas } from '@/domain/esteira'
 import { aplicarFiltros, filtrosAtivos } from '@/domain/filtros'
@@ -31,6 +36,9 @@ export function BoardHome() {
   const board = useBoard(boardId)
   const cards = useCards(boardId)
   const usuarios = useUsuarios()
+  const perm = usePermissao()
+  // Visualizador não dispara nada que grave (migração, leitura automática, auto-avanço, sincronização).
+  const podeAutomatizar = perm.carregado && !perm.somenteLeitura
   const visao = useUI((s) => s.visao)
   const setVisao = useUI((s) => s.setVisao)
   const filtros = useUI((s) => s.filtros)
@@ -39,10 +47,16 @@ export function BoardHome() {
   const finalizandoCardId = useUI((s) => s.finalizandoCardId)
   const mostrarFinalizados = useUI((s) => s.mostrarFinalizados)
   const alternarFinalizados = useUI((s) => s.alternarFinalizados)
+  const urgentesPrimeiro = useUI((s) => s.urgentesPrimeiro)
+  const alternarUrgentesPrimeiro = useUI((s) => s.alternarUrgentesPrimeiro)
 
-  const reconc = useReconciliacao(board.data ?? undefined, cards.data)
+  // Esteira antiga (4 semanas ou kick-off de 2 dias) é ajustada antes de o auto-avanço rodar.
+  useMigracaoDuasSemanas(podeAutomatizar ? board.data ?? undefined : undefined, cards.data)
+  // Card com nº de ticket no nome → dados do Movidesk lidos sozinhos (um por vez).
+  useLeituraTicketsAutomatica(podeAutomatizar ? boardId : undefined, cards.data)
+  const reconc = useReconciliacao(podeAutomatizar && board.data && !precisaAjustarEsteira(board.data) ? board.data : undefined, cards.data)
   const configIntegracao = useConfigIntegracao(boardId)
-  const sync = useSincronizacao(board.data ?? undefined, cards.data, configIntegracao.data)
+  const sync = useSincronizacao(podeAutomatizar ? board.data ?? undefined : undefined, cards.data, configIntegracao.data)
   const fases = useMemo(() => fasesOrdenadas(board.data?.fases ?? []), [board.data?.fases])
   const finalizar = useFinalizarCard(boardId ?? '', fases)
 
@@ -99,9 +113,13 @@ export function BoardHome() {
                 {boards.data!.map((b) => <option key={b.id} value={b.id}>{b.nome}</option>)}
               </select>
             )}
+            {!perm.somenteLeitura && <>
             <button className="btn btn-soft btn-sm" onClick={() => abrirConfig('fases')} title="Fases, ciclo, templates e campos">⚙ Configurar</button>
             <button className="btn btn-soft btn-sm" onClick={() => abrirConfig('importar')} title="Importar clientes de CSV ou tabela colada">⇪ Importar</button>
             <button className={`btn btn-soft btn-sm ${configIntegracao.data?.ultimoErro ? '!text-red' : ''}`} onClick={() => abrirConfig('integracao')} title={configIntegracao.data?.ultimoErro ? `Erro na última sincronização: ${configIntegracao.data.ultimoErro}` : 'Configurar integração (Movidesk)'}>⇅ Integração{configIntegracao.data?.ultimoErro ? ' ⚠' : ''}</button>
+            </>}
+            {perm.admin && <button className="btn btn-soft btn-sm" onClick={() => abrirConfig('usuarios')} title="Criar, ajustar, bloquear e excluir usuários">👥 Usuários</button>}
+            {perm.somenteLeitura && <span className="font-mono text-[11px] uppercase tracking-[.08em] px-2 py-1 rounded-[3px] bg-soft3 border border-line text-muted" title="Seu acesso é só de leitura">👁 Somente visualização</span>}
           </div>
           <p className="text-muted text-[13px] mt-1">{board.data.descricao}</p>
         </div>
@@ -111,9 +129,9 @@ export function BoardHome() {
         <Stat n={aguardando.length} l="p/ finalizar" cor={aguardando.length ? 'var(--accent)' : undefined} />
         <Stat n={finalizados.length} l="finalizados" />
         {/* O formulário rápido vive na coluna do Kanban: nas outras visões o clique não mostrava nada. */}
-        <button className="btn btn-primary self-center" onClick={() => { if (!fases[0]) return; if (visao !== 'kanban') setVisao('kanban'); abrirQuickAdd(fases[0].id) }} title="Atalho: N">
+        {!perm.somenteLeitura && <button className="btn btn-primary self-center" onClick={() => { if (!fases[0]) return; if (visao !== 'kanban') setVisao('kanban'); abrirQuickAdd(fases[0].id) }} title="Atalho: N">
           + Novo cliente
-        </button>
+        </button>}
       </div>
 
       <BarraVisoes board={board.data} cards={todos} usuarios={lista} />
@@ -121,7 +139,7 @@ export function BoardHome() {
       {visao === 'kanban' && (
         <>
           <div className="flex items-center gap-2 mb-3 flex-wrap text-[12px] text-muted">
-            <button className="btn btn-ghost btn-sm" onClick={reconc.executar} disabled={reconc.executando} title="Move para a fase esperada quem está atrás pelo tempo">
+            <button className="btn btn-ghost btn-sm" onClick={reconc.executar} disabled={reconc.executando || perm.somenteLeitura} title="Move para a fase esperada quem está atrás pelo tempo">
               {reconc.executando ? '…' : '↻'} Recalcular fases
             </button>
             <span className="font-mono">
@@ -129,6 +147,10 @@ export function BoardHome() {
             </span>
             {nFiltros > 0 && <span className="font-mono text-accent2">· mostrando {filtrados.filter((c) => c.status !== 'finalizado').length} de {ativos.length}</span>}
             <span className="flex-1" />
+            <label className="flex items-center gap-1.5 cursor-pointer select-none" title="Em cada coluna: urgentes, depois em risco, depois em atenção">
+              <input type="checkbox" className="!w-auto" checked={urgentesPrimeiro} onChange={alternarUrgentesPrimeiro} />
+              Urgentes no topo
+            </label>
             <label className="flex items-center gap-1.5 cursor-pointer select-none">
               <input type="checkbox" className="!w-auto" checked={mostrarFinalizados} onChange={alternarFinalizados} />
               Mostrar finalizados ({finalizados.length})
@@ -150,8 +172,9 @@ export function BoardHome() {
             </div>
           )}
 
+          <LegendaCores />
           <Kanban board={board.data} cards={filtrados} usuarios={lista} derivados={derivados} />
-          <p className="text-[11.5px] text-muted mt-2 font-mono">Arraste os cards entre as fases · <b>N</b> cria um cliente · <b>Esc</b> fecha · ● saúde · 📌 fixado</p>
+          <p className="text-[11.5px] text-muted mt-2 font-mono">Arraste os cards entre as fases · <b>N</b> cria um cliente · <b>Esc</b> fecha · ✋ saúde definida à mão · 📌 fixado</p>
         </>
       )}
 
@@ -160,6 +183,7 @@ export function BoardHome() {
       {visao === 'calendario' && <Calendario board={board.data} cards={filtrados} />}
       {visao === 'painel' && <Painel board={board.data} cards={filtrados} usuarios={lista} derivados={derivados} />}
 
+      {telaConfig === 'usuarios' && perm.admin && <Usuarios onFechar={() => abrirConfig(null)} />}
       {telaConfig === 'fases' && <ConfigFases board={board.data} cards={todos} onFechar={() => abrirConfig(null)} />}
       {telaConfig === 'importar' && <Importar board={board.data} usuarios={lista} onFechar={() => abrirConfig(null)} />}
       {telaConfig === 'integracao' && <ConfigIntegracaoTela board={board.data} onFechar={() => abrirConfig(null)} onSincronizar={sync.sincronizar} sincronizando={sync.executando} />}
@@ -172,6 +196,27 @@ export function BoardHome() {
         onConfirmar={(d) => { if (cardFinalizando) { finalizar.mutate({ card: cardFinalizando, ...d }); abrirDesfecho(null); useUI.getState().abrirCard(null) } }}
       />
     </section>
+  )
+}
+
+/** Legenda de leitura do card: barra = saúde, etiqueta = prioridade, contorno = urgente. */
+function LegendaCores() {
+  const barra = (cor: string, rotulo: string) => (
+    <span className="inline-flex items-center gap-1.5"><span className="w-[6px] h-4 rounded-[2px]" style={{ background: cor }} aria-hidden />{rotulo}</span>
+  )
+  return (
+    <div className="flex items-center gap-x-3.5 gap-y-1.5 flex-wrap mb-2.5 text-[12px] text-ink" aria-label="Legenda de cores">
+      <span className="lbl">Barra = saúde</span>
+      {barra('var(--green)', 'Saudável')}
+      {barra('var(--amber)', 'Atenção')}
+      {barra('var(--red)', 'Em risco')}
+      <span className="w-px h-4 bg-line" aria-hidden />
+      <span className="lbl">Etiqueta = prioridade</span>
+      <Etiqueta cor={COR_PRIORIDADE.alta}>{ICONE_PRIORIDADE.alta} Alta</Etiqueta>
+      <Etiqueta cor={COR_PRIORIDADE.critica} cheia>{ICONE_PRIORIDADE.critica} Crítica</Etiqueta>
+      <span className="w-px h-4 bg-line" aria-hidden />
+      <span className="inline-flex items-center gap-1.5"><span className="w-4 h-4 rounded-[3px] oa-urgente bg-card" aria-hidden />Contorno pulsando = em risco com prioridade alta</span>
+    </div>
   )
 }
 

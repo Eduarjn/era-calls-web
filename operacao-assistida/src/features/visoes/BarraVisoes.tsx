@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { Board, Card, Usuario, Visao, VisaoSalva } from '@/domain/types'
 import { ROTULO_PRIORIDADE, ROTULO_SAUDE } from '@/domain/prazo'
-import { filtrosAtivos } from '@/domain/filtros'
+import { filtrosAtivos, PREFIXO_NOME } from '@/domain/filtros'
+import { responsavelDigitado } from '@/domain/cardExtras'
+import { INTEGRACAO_NAO_INFORMADA, ROTULO_INTEGRACAO, SEM_VENDEDOR, vendedorDoCard, VENDEDORES_INTERNOS } from '@/domain/comercial'
 import { getRepository } from '@/data'
 import { useUI } from '@/store/uiStore'
 import { MultiSelect } from '@/ui/MultiSelect'
@@ -44,6 +46,9 @@ export function BarraVisoes({ board, cards, usuarios }: Props) {
 
   const fases = board.fases.filter((f) => !f.arquivada).sort((a, b) => a.ordem - b.ordem)
   const tags = [...new Set(cards.flatMap((c) => c.tags))].sort()
+  const nomesDigitados = [...new Set(cards.filter((c) => !c.responsavelId).map(responsavelDigitado).filter((n): n is string => !!n))].sort()
+  // Internos + qualquer vendedor que tenha entrado por importação e não esteja na lista.
+  const vendedores = [...new Set([...VENDEDORES_INTERNOS, ...cards.map(vendedorDoCard).filter((v): v is string => !!v)])]
   const n = filtrosAtivos(filtros)
 
   function aplicarVisao(v: VisaoSalva) { setVisao(v.visao); useUI.setState({ filtros: v.filtros }) }
@@ -51,12 +56,12 @@ export function BarraVisoes({ board, cards, usuarios }: Props) {
   return (
     <div className="flex flex-col gap-2.5 mb-4">
       <div className="flex items-center gap-2 flex-wrap">
-        <div className="inline-flex border border-line rounded-ctl overflow-hidden bg-card" role="tablist" aria-label="Modo de visualização">
+        <div className="inline-flex max-w-full overflow-x-auto border border-line rounded-ctl bg-card" role="tablist" aria-label="Modo de visualização">
           {VISOES.map((v) => (
             <button
               key={v.id} role="tab" aria-selected={visao === v.id}
               onClick={() => setVisao(v.id)}
-              className={`px-3 py-1.5 text-[13px] font-semibold transition-colors border-r border-line last:border-r-0 ${visao === v.id ? 'bg-navy text-bg2' : 'text-muted hover:text-navy hover:bg-card2'}`}
+              className={`shrink-0 whitespace-nowrap px-3 py-1.5 text-[13px] font-semibold transition-colors border-r border-line last:border-r-0 ${visao === v.id ? 'bg-navy text-bg2' : 'text-muted hover:text-navy hover:bg-card2'}`}
             >
               <span className="mr-1.5 opacity-70" aria-hidden>{v.icone}</span>{v.rotulo}
             </button>
@@ -68,17 +73,20 @@ export function BarraVisoes({ board, cards, usuarios }: Props) {
 
       <div className="flex items-center gap-1.5 flex-wrap">
         <input
-          className="!w-[240px] !py-1.5 !text-[13px]"
+          className="!w-full sm:!w-[240px] !py-1.5 !text-[13px]"
           placeholder="Buscar cliente, código, tag…"
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
           aria-label="Buscar"
         />
-        <MultiSelect rotulo="Responsável" opcoes={usuarios.map((u) => ({ valor: u.id, rotulo: u.nome }))} valores={filtros.responsavelIds} onChange={(v) => setFiltros({ responsavelIds: v })} />
+        <MultiSelect rotulo="Responsável" opcoes={[...usuarios.map((u) => ({ valor: u.id, rotulo: u.nome })), ...nomesDigitados.map((n) => ({ valor: PREFIXO_NOME + n, rotulo: n }))]} valores={filtros.responsavelIds} onChange={(v) => setFiltros({ responsavelIds: v })} />
         <MultiSelect rotulo="Fase" opcoes={fases.map((f) => ({ valor: f.id, rotulo: f.nome, cor: f.cor }))} valores={filtros.faseIds} onChange={(v) => setFiltros({ faseIds: v })} />
         <MultiSelect rotulo="Saúde" opcoes={(['verde', 'amarelo', 'vermelho'] as const).map((s) => ({ valor: s, rotulo: ROTULO_SAUDE[s], cor: `var(--${s === 'verde' ? 'green' : s === 'amarelo' ? 'amber' : 'red'})` }))} valores={filtros.saudes} onChange={(v) => setFiltros({ saudes: v as Card['saude'][] })} />
         <MultiSelect rotulo="Prioridade" opcoes={(Object.keys(ROTULO_PRIORIDADE) as Card['prioridade'][]).map((p) => ({ valor: p, rotulo: ROTULO_PRIORIDADE[p] }))} valores={filtros.prioridades} onChange={(v) => setFiltros({ prioridades: v as Card['prioridade'][] })} />
         <MultiSelect rotulo="Tag" opcoes={tags.map((t) => ({ valor: t, rotulo: t }))} valores={filtros.tags} onChange={(v) => setFiltros({ tags: v })} />
+        <MultiSelect rotulo="Vendedor" opcoes={[...vendedores.map((v) => ({ valor: v, rotulo: v })), { valor: SEM_VENDEDOR, rotulo: 'Sem vendedor' }]} valores={filtros.vendedores ?? []} onChange={(v) => setFiltros({ vendedores: v })} />
+        <MultiSelect rotulo="Origem" opcoes={[{ valor: 'tip', rotulo: 'TIP', cor: 'var(--accent2)' }, { valor: 'interna', rotulo: 'Sem TIP' }]} valores={filtros.origens ?? []} onChange={(v) => setFiltros({ origens: v as ('tip' | 'interna')[] })} />
+        <MultiSelect rotulo="Integração" opcoes={[{ valor: 'sim', rotulo: ROTULO_INTEGRACAO.sim, cor: 'var(--blue)' }, { valor: 'nao', rotulo: ROTULO_INTEGRACAO.nao }, { valor: INTEGRACAO_NAO_INFORMADA, rotulo: 'Não informado' }]} valores={filtros.integracoes ?? []} onChange={(v) => setFiltros({ integracoes: v })} />
         <MultiSelect rotulo="Status" opcoes={[['ativo', 'Ativo'], ['pausado', 'Pausado'], ['finalizado', 'Finalizado'], ['cancelado', 'Cancelado']].map(([v, r]) => ({ valor: v!, rotulo: r! }))} valores={filtros.status} onChange={(v) => setFiltros({ status: v as Card['status'][] })} />
         <span className="inline-flex items-center gap-1 text-[12px] text-muted">
           <span className="lbl">entrada</span>

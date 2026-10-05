@@ -24,6 +24,8 @@ export interface ConfiguracoesBoard {
   fusoHorario: string
   /** Campos extras que todo card do board pode preencher. */
   camposCustomizados?: CampoCustomizado[]
+  /** '2s-k7' = esteira já revisada (Kick-off de 1 semana + 2 semanas, ou escolhida de propósito): não ajustar de novo. '2s' = versão de 24/09 (kick-off de 2 dias). */
+  esteiraVersao?: string
 }
 
 export interface Board {
@@ -180,10 +182,19 @@ export interface Filtros {
   /** Período da data de entrada (ISO yyyy-MM-dd). */
   entradaDe?: string
   entradaAte?: string
+  /**
+   * Comercial (ver domain/comercial.ts). Opcionais porque visão salva antes deles não traz as chaves.
+   * vendedores: nome do vendedor interno ou SEM_VENDEDOR · origens: 'tip' | 'interna'
+   * integracoes: 'sim' | 'nao' | 'nd' (não informado)
+   */
+  vendedores?: string[]
+  origens?: ('tip' | 'interna')[]
+  integracoes?: string[]
 }
 
 export const FILTROS_VAZIOS: Filtros = {
   busca: '', responsavelIds: [], faseIds: [], saudes: [], prioridades: [], tags: [], status: [],
+  vendedores: [], origens: [], integracoes: [],
 }
 
 export interface VisaoSalva {

@@ -17,8 +17,8 @@ interface UIState {
   boardAtivoId: string | null
   setBoardAtivo: (id: string | null) => void
 
-  telaConfig: 'fases' | 'importar' | 'integracao' | null
-  abrirConfig: (t: 'fases' | 'importar' | 'integracao' | null) => void
+  telaConfig: 'fases' | 'importar' | 'integracao' | 'usuarios' | null
+  abrirConfig: (t: 'fases' | 'importar' | 'integracao' | 'usuarios' | null) => void
 
   filtros: Filtros
   setFiltros: (f: Partial<Filtros>) => void
@@ -38,6 +38,10 @@ interface UIState {
 
   mostrarFinalizados: boolean
   alternarFinalizados: () => void
+
+  /** Kanban: urgentes e em risco no topo de cada coluna. */
+  urgentesPrimeiro: boolean
+  alternarUrgentesPrimeiro: () => void
 
   colunasColapsadas: Record<string, boolean>
   alternarColuna: (faseId: string) => void
@@ -79,6 +83,9 @@ export const useUI = create<UIState>()(
       mostrarFinalizados: false,
       alternarFinalizados: () => set((s) => ({ mostrarFinalizados: !s.mostrarFinalizados })),
 
+      urgentesPrimeiro: true,
+      alternarUrgentesPrimeiro: () => set((s) => ({ urgentesPrimeiro: !s.urgentesPrimeiro })),
+
       colunasColapsadas: {},
       alternarColuna: (faseId) =>
         set((s) => ({ colunasColapsadas: { ...s.colunasColapsadas, [faseId]: !s.colunasColapsadas[faseId] } })),
@@ -96,7 +103,7 @@ export const useUI = create<UIState>()(
     {
       name: 'oa-ui',
       // Só preferências de tela: última visão, colunas recolhidas, mostrar finalizados.
-      partialize: (s) => ({ visao: s.visao, boardAtivoId: s.boardAtivoId, colunasColapsadas: s.colunasColapsadas, mostrarFinalizados: s.mostrarFinalizados }),
+      partialize: (s) => ({ visao: s.visao, boardAtivoId: s.boardAtivoId, colunasColapsadas: s.colunasColapsadas, mostrarFinalizados: s.mostrarFinalizados, urgentesPrimeiro: s.urgentesPrimeiro }),
     },
   ),
 )

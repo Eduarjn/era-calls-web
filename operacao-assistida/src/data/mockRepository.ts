@@ -2,8 +2,10 @@ import { nanoid } from 'nanoid'
 import type {
   Board, Card, Evento, Fase, Id, NovoCard, NovoEvento, PatchCard, TemplateBoard, Usuario, VisaoSalva,
 } from '@/domain/types'
-import { CONFIG_PADRAO, TEMPLATES_PADRAO } from '@/domain/seed'
+import { CONFIG_PADRAO, DESCRICAO_2S, TEMPLATES_PADRAO } from '@/domain/seed'
 import { hojeISO, somarDiasISO } from '@/domain/datas'
+import { CHAVE_COR, CHAVE_RESPONSAVEL_NOME } from '@/domain/cardExtras'
+import { CHAVE_INTEGRACAO, CHAVE_INTEGRACAO_QUAL, CHAVE_TIP, CHAVE_VENDEDOR } from '@/domain/comercial'
 import { RepositoryError, type Repository } from './repository'
 import { CONFIG_INTEGRACAO_PADRAO, type ConfigIntegracao } from '@/integrations/types'
 
@@ -235,7 +237,7 @@ export class MockRepository implements Repository {
   private semear() {
     const boardId = 'board-oa'
     const board: Board = {
-      id: boardId, nome: 'Operação Assistida', descricao: 'Acompanhamento pós-implantação (30 dias).',
+      id: boardId, nome: 'Operação Assistida', descricao: DESCRICAO_2S,
       fases: [], configuracoes: clone(CONFIG_PADRAO), criadoEm: agoraISO(), atualizadoEm: agoraISO(),
     }
     this.boards.set(boardId, board)
@@ -252,13 +254,22 @@ export class MockRepository implements Repository {
       // cliente, dias desde a entrada, índice da fase, responsável, prioridade, tags
       ['Clínica Vida Plena', 1, 0, 'u-ana', 'media', ['clínica']],
       ['Provedor NetSul', 5, 1, 'u-rafael', 'alta', ['provedor', 'omnichannel']],
-      ['Auto Peças Ramos', 9, 2, 'u-ana', 'baixa', ['pabx']],
-      ['Condomínio Solar', 13, 1, 'u-rafael', 'media', ['pabx']],      // fixado e atrás da esteira
-      ['Escola Horizonte', 17, 3, 'u-ana', 'critica', ['call center']],
-      ['Log Express', 33, 4, 'u-rafael', 'alta', ['discador']],         // passou dos 30 dias → aguardando finalização
-      ['Farmácia Central', 27, 4, 'u-eduardo', 'media', ['omnichannel']],
-      ['Hotel Mirante', 12, 1, 'u-ana', 'media', ['pabx']],             // atrás: o sistema avança sozinho ao carregar
+      ['Auto Peças Ramos', 10, 2, 'u-ana', 'baixa', ['pabx']],
+      ['Condomínio Solar', 12, 1, 'u-rafael', 'media', ['pabx']],      // fixado e atrás da esteira
+      ['Escola Horizonte', 14, 2, 'Jéssica (implantação)', 'critica', ['call center']], // responsável sem login
+      ['Log Express', 18, 2, 'u-rafael', 'alta', ['discador']],         // passou dos 16 dias → aguardando finalização
+      ['Farmácia Central', 3, 1, 'u-eduardo', 'media', ['omnichannel']],
+      ['Hotel Mirante', 11, 1, 'u-ana', 'media', ['pabx']],             // atrás: o sistema avança sozinho ao carregar
     ]
+    // Dados comerciais de exemplo (só no mock): vendedor interno · TIP · integração.
+    const COMERCIAL: Record<string, { vendedor?: string; tip?: boolean; integracao?: 'sim' | 'nao'; qual?: string }> = {
+      'Clínica Vida Plena': { vendedor: 'Nicole', integracao: 'sim', qual: 'CRM' },
+      'Provedor NetSul': { tip: true, integracao: 'sim', qual: 'API própria' },
+      'Auto Peças Ramos': { vendedor: 'Gustavo', integracao: 'nao' },
+      'Escola Horizonte': { vendedor: 'Junior Salim', integracao: 'sim', qual: 'ERP' },
+      'Log Express': { tip: true },
+      'Farmácia Central': { vendedor: 'Nicole', integracao: 'nao' },
+    }
     for (const [nome, dias, faseIdx, resp, prio, tags] of exemplos) {
       const entrada = somarDiasISO(hoje, -dias, fuso)
       const faseId = faseIds[faseIdx]
@@ -268,14 +279,22 @@ export class MockRepository implements Repository {
         id, boardId, codigo: this.proximoCodigo(), clienteNome: nome,
         contatoPrincipal: { nome: 'Contato ' + nome.split(' ')[0], email: 'contato@exemplo.com' },
         segmento: tags[0], produtoPlano: 'Plataforma ERA',
-        responsavelId: resp, coResponsaveisIds: [],
-        dataEntrada: entrada, dataPrevistaSaida: somarDiasISO(entrada, 30, fuso),
+        responsavelId: resp.startsWith('u-') ? resp : undefined, coResponsaveisIds: [],
+        dataEntrada: entrada, dataPrevistaSaida: somarDiasISO(entrada, board.configuracoes.duracaoCicloDias, fuso),
         faseId, dataEntradaNaFase: somarDiasISO(hoje, -Math.min(dias, 3), fuso),
         status: 'ativo', prioridade: prio, saude: 'verde', tags,
         travadoManualmente: nome === 'Condomínio Solar',
         checklist: fase.checklistPadrao.map((texto, i) => ({ id: nanoid(8), texto, feito: i === 0 })),
-        anexos: [], camposCustomizados: {},
-        proximaAcao: faseIdx > 0 ? { descricao: 'Acionamento semanal', dataPrazo: somarDiasISO(hoje, (faseIdx % 3) - 1, fuso), responsavelId: resp } : undefined,
+        anexos: [],
+        camposCustomizados: {
+          ...(resp.startsWith('u-') ? {} : { [CHAVE_RESPONSAVEL_NOME]: resp }),
+          ...(nome === 'Provedor NetSul' ? { [CHAVE_COR]: '#F97316' } : nome === 'Escola Horizonte' ? { [CHAVE_COR]: '#EC4899' } : {}),
+          ...(COMERCIAL[nome]?.vendedor ? { [CHAVE_VENDEDOR]: COMERCIAL[nome]!.vendedor! } : {}),
+          ...(COMERCIAL[nome]?.tip ? { [CHAVE_TIP]: true } : {}),
+          ...(COMERCIAL[nome]?.integracao ? { [CHAVE_INTEGRACAO]: COMERCIAL[nome]!.integracao! } : {}),
+          ...(COMERCIAL[nome]?.qual ? { [CHAVE_INTEGRACAO_QUAL]: COMERCIAL[nome]!.qual! } : {}),
+        },
+        proximaAcao: faseIdx > 0 ? { descricao: 'Acionamento semanal', dataPrazo: somarDiasISO(hoje, (faseIdx % 3) - 1, fuso), responsavelId: resp.startsWith('u-') ? resp : undefined } : undefined,
         criadoEm: entrada, atualizadoEm: agoraISO(),
       }
       this.cards.set(id, card)
@@ -285,14 +304,14 @@ export class MockRepository implements Repository {
       if (dias >= 3) {
         this.eventos.set(nanoid(10), {
           id: '', cardId: id, tipo: 'ligacao', titulo: 'Ligação de boas-vindas e alinhamento do plano', descricao: 'Confirmado o contato principal e o horário de uso da plataforma.',
-          dataHora: somarDiasISO(entrada, 1, fuso).replace('T00:00', 'T10:30'), autorId: resp, autorNome: USUARIOS.find((u) => u.id === resp)?.nome,
+          dataHora: somarDiasISO(entrada, 1, fuso).replace('T00:00', 'T10:30'), autorId: resp.startsWith('u-') ? resp : undefined, autorNome: USUARIOS.find((u) => u.id === resp)?.nome ?? resp,
           duracaoMin: 18, anexos: [], origem: 'manual', geradoPeloSistema: false,
         })
       }
       if (dias >= 8) {
         this.eventos.set(nanoid(10), {
           id: '', cardId: id, tipo: 'whatsapp', titulo: 'Dúvida sobre relatório de chamadas', descricao: 'Enviado o passo a passo do Registro de Chamadas.',
-          dataHora: somarDiasISO(entrada, 6, fuso).replace('T00:00', 'T15:12'), autorId: resp, autorNome: USUARIOS.find((u) => u.id === resp)?.nome,
+          dataHora: somarDiasISO(entrada, 6, fuso).replace('T00:00', 'T15:12'), autorId: resp.startsWith('u-') ? resp : undefined, autorNome: USUARIOS.find((u) => u.id === resp)?.nome ?? resp,
           anexos: [], origem: 'manual', geradoPeloSistema: false,
         })
       }

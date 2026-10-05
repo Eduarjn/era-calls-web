@@ -1,18 +1,22 @@
 import type { Card, Fase, Usuario } from '@/domain/types'
 import type { Derivados } from '@/features/kanban/CardKanban'
+import { corDoCard, nomeResponsavel } from '@/domain/cardExtras'
+import { ehTip, integracaoDoCard, integracaoQual, vendedorDoCard } from '@/domain/comercial'
 
 export interface LinhaExport { [coluna: string]: string | number }
 
 export function linhasParaExportar(cards: Card[], fases: Fase[], usuarios: Usuario[], derivados: Map<string, Derivados>): LinhaExport[] {
   const fase = (id: string) => fases.find((f) => f.id === id)?.nome ?? ''
-  const nome = (id?: string) => usuarios.find((u) => u.id === id)?.nome ?? ''
   return cards.map((c) => ({
     Código: c.codigo, Cliente: c.clienteNome, Fase: fase(c.faseId), Status: c.status,
-    Responsável: nome(c.responsavelId), Prioridade: c.prioridade, Saúde: derivados.get(c.id)?.saude ?? c.saude,
+    Responsável: nomeResponsavel(c, usuarios) ?? '', Prioridade: c.prioridade, Saúde: derivados.get(c.id)?.saude ?? c.saude,
     Entrada: c.dataEntrada.slice(0, 10), 'Saída prevista': c.dataPrevistaSaida.slice(0, 10), 'Saída real': c.dataSaidaReal?.slice(0, 10) ?? '',
     Resultado: c.resultadoFinal ?? '', 'Próxima ação': c.proximaAcao?.descricao ?? '', 'Prazo da ação': c.proximaAcao?.dataPrazo.slice(0, 10) ?? '',
     Segmento: c.segmento ?? '', 'Produto/plano': c.produtoPlano ?? '', Contato: c.contatoPrincipal?.nome ?? '', 'E-mail': c.contatoPrincipal?.email ?? '',
-    Tags: c.tags.join(', '), 'Id externo': c.clienteId ?? '',
+    Vendedor: vendedorDoCard(c) ?? '', TIP: ehTip(c) ? 'Sim' : '',
+    'Integração': integracaoDoCard(c) === 'sim' ? 'Sim' : integracaoDoCard(c) === 'nao' ? 'Não' : '',
+    'Qual integração': integracaoQual(c) ?? '',
+    Tags: c.tags.join(', '), Cor: corDoCard(c) ?? '', 'Id externo': c.clienteId ?? '',
   }))
 }
 

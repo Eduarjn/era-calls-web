@@ -4,3 +4,6 @@ public_build/
 .vercel
 .claude/
 *.tsbuildinfo
+
+# scratch do CLI do Supabase
+supabase/.temp/

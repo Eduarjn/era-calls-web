@@ -17,8 +17,23 @@ export function Badge({ cor = 'neutro', children, title, className = '' }: { cor
   )
 }
 
+/** Etiqueta com cor livre (var(--x) ou hex): contorno + fundo claro, ou cheia para o que exige ação. */
+export function Etiqueta({ cor, cheia, children, title, className = '' }: { cor: string; cheia?: boolean; children: ReactNode; title?: string; className?: string }) {
+  return (
+    <span
+      title={title}
+      className={`inline-flex items-center gap-1 rounded-badge px-1.5 py-[3px] font-mono text-[10.5px] font-semibold leading-none whitespace-nowrap border ${className}`}
+      style={cheia
+        ? { background: cor, borderColor: cor, color: '#fff' }
+        : { background: `color-mix(in srgb, ${cor} 13%, transparent)`, borderColor: `color-mix(in srgb, ${cor} 45%, transparent)`, color: cor }}
+    >
+      {children}
+    </span>
+  )
+}
+
 export function Avatar({ nome, cor, tamanho = 22 }: { nome: string; cor?: string; tamanho?: number }) {
-  const ini = nome.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]!.toUpperCase()).join('') || '?'
+  const ini = nome.split(/\s+/).map((p) => p.replace(/[^\p{L}\p{N}]/gu, '')).filter(Boolean).slice(0, 2).map((p) => p[0]!.toUpperCase()).join('') || '?'
   return (
     <span
       className="inline-grid place-items-center rounded-full font-mono font-semibold text-white shrink-0"

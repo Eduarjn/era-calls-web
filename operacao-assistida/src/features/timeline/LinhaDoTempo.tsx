@@ -4,6 +4,7 @@ import { ptBR } from 'date-fns/locale'
 import type { Board, Card, Usuario } from '@/domain/types'
 import { diasEntre, hojeISO, noFuso, somarDiasISO } from '@/domain/datas'
 import { fasesDaEsteira } from '@/domain/esteira'
+import { nomeResponsavel } from '@/domain/cardExtras'
 import { useUI } from '@/store/uiStore'
 import type { Derivados } from '@/features/kanban/CardKanban'
 import { Avatar } from '@/ui/Badge'
@@ -42,7 +43,7 @@ export function LinhaDoTempo({ board, cards, usuarios, derivados }: Props) {
           <div className="h-9 border-b border-line lbl flex items-center px-3">Cliente</div>
           {linhas.map((c) => (
             <button key={c.id} onClick={() => abrirCard(c.id)} className="h-11 w-full flex items-center gap-2 px-3 border-b border-line last:border-b-0 text-left hover:bg-soft3">
-              <Avatar nome={usuarios.find((u) => u.id === c.responsavelId)?.nome ?? '—'} tamanho={20} />
+              <Avatar nome={nomeResponsavel(c, usuarios) ?? '—'} tamanho={20} />
               <span className="min-w-0"><span className="block font-semibold text-[13px] text-navy truncate">{c.clienteNome}</span><span className="block font-mono text-[10.5px] text-muted">{c.codigo}</span></span>
             </button>
           ))}

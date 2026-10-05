@@ -342,15 +342,118 @@
   @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}}
 
   @media(max-width:680px){.stats{grid-template-columns:repeat(2,1fr)}}
+
+  /* ===== Abertura (splash): logotipo ERA surge e desvanece ===== */
+  #splash{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;background:var(--bg,#0E1322);
+    transition:opacity .6s ease,visibility .6s;overflow:hidden}
+  #splash::before{content:"";position:absolute;inset:-40px;background-image:linear-gradient(var(--line,rgba(128,140,180,.12)) 1px,transparent 1px),linear-gradient(90deg,var(--line,rgba(128,140,180,.12)) 1px,transparent 1px);
+    background-size:40px 40px;opacity:.5;animation:splGrid 6s linear infinite}
+  #splash.sai{opacity:0;visibility:hidden}
+  #splash .spl-box{position:relative;display:flex;flex-direction:column;align-items:center;gap:18px;transition:transform .6s ease,filter .6s ease}
+  #splash.sai .spl-box{transform:scale(1.05);filter:blur(3px)}
+  #splash .spl-logo{width:min(240px,56vw);height:auto;color:var(--navy,#EDF0F8);
+    clip-path:inset(0 100% 0 0);animation:splRevela .9s cubic-bezier(.7,0,.2,1) .15s forwards, splRespira 2.4s ease-in-out 1.1s infinite}
+  #splash .spl-sub{font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.32em;text-transform:uppercase;color:var(--muted,#8C93AE);
+    opacity:0;animation:splSobe .6s ease .75s forwards}
+  #splash .spl-barra{width:160px;height:2px;background:var(--line,rgba(128,140,180,.2));border-radius:2px;overflow:hidden;opacity:0;animation:splSobe .4s ease .9s forwards}
+  #splash .spl-barra i{display:block;height:100%;width:40%;background:var(--accent,#E8323F);animation:splCorre 1.1s ease-in-out infinite}
+  @keyframes splRevela{to{clip-path:inset(0 0 0 0)}}
+  @keyframes splRespira{0%,100%{opacity:1}50%{opacity:.7}}
+  @keyframes splSobe{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  @keyframes splCorre{0%{transform:translateX(-100%)}100%{transform:translateX(260%)}}
+  @keyframes splGrid{to{transform:translate(40px,40px)}}
+  @media(prefers-reduced-motion:reduce){#splash .spl-logo{clip-path:none;animation:none}#splash::before,#splash .spl-barra i{animation:none}}
+
+  /* ===== Login e entrada do app ===== */
+  #login{position:relative;overflow:hidden}
+  #login::before{content:"";position:absolute;inset:-60px;pointer-events:none;
+    background:radial-gradient(600px 400px at 20% 10%,rgba(43,55,132,.28),transparent 70%),radial-gradient(500px 380px at 85% 90%,rgba(223,31,45,.18),transparent 70%);
+    animation:auroraMove 14s ease-in-out infinite alternate}
+  @keyframes auroraMove{to{transform:translate(40px,-30px) scale(1.08)}}
+  .loginbox{position:relative;backdrop-filter:blur(6px);animation:loginIn .7s cubic-bezier(.2,.8,.2,1) .2s both}
+  .loginbox>*{animation:rise .55s cubic-bezier(.2,.8,.2,1) both}
+  .loginbox>*:nth-child(1){animation-delay:.30s}.loginbox>*:nth-child(2){animation-delay:.36s}.loginbox>*:nth-child(3){animation-delay:.42s}
+  .loginbox>*:nth-child(4),.loginbox>*:nth-child(5){animation-delay:.48s}.loginbox>*:nth-child(6),.loginbox>*:nth-child(7){animation-delay:.54s}
+  .loginbox>*:nth-child(8){animation-delay:.60s}.loginbox>*:nth-child(9){animation-delay:0s}
+  @keyframes loginIn{from{opacity:0;transform:translateY(18px) scale(.98)}to{opacity:1;transform:none}}
+  .login-marca{display:flex;align-items:center;gap:12px}
+  .login-marca svg{height:26px;width:auto;color:var(--navy)}
+  .login-marca span{font:600 10.5px/1 'IBM Plex Mono',monospace;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);border-left:1px solid var(--line);padding-left:12px;white-space:nowrap}
+  .loginbox .btn-primary{position:relative;overflow:hidden}
+  .loginbox .btn-primary::after{content:"";position:absolute;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);transform:skewX(-20deg);transition:left .6s}
+  .loginbox .btn-primary:hover::after{left:130%}
+  .loginbox .btn-primary.carregando{pointer-events:none;opacity:.85}
+  .loginbox .btn-primary.carregando::before{content:"";width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+  #loginErr:not(.hidden){animation:tremer .4s}
+  @keyframes tremer{20%,60%{transform:translateX(-5px)}40%,80%{transform:translateX(5px)}}
+  #app:not(.hidden){animation:fade .5s ease}
+  #app header{animation:desce .5s cubic-bezier(.2,.8,.2,1) both}
+  @keyframes desce{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+  .panel{transition:box-shadow .25s ease,transform .25s ease}
+  .panel:hover{box-shadow:0 12px 32px -20px rgba(20,27,60,.4)}
+
+  /* ===== Smartphone: cabeçalho compacto, abas roláveis, grades em 1 coluna, modal em tela cheia ===== */
+  html,body{overflow-x:hidden}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(min(320px,100%),1fr))}
+  .mkt-grid{grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr))}
+  .seg-grid{grid-template-columns:repeat(auto-fill,minmax(min(230px,100%),1fr))}
+  @media(max-width:680px){
+    header{padding:10px 12px;gap:8px;flex-wrap:wrap}
+    header .logo{width:34px!important;height:34px!important;font-size:17px!important}
+    header h1{font-size:13px;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    header .sub{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    header{flex-wrap:nowrap;gap:6px}
+    header>div:nth-child(2){min-width:0;flex:1}
+    header .spacer,#apBtn{display:none}
+    header .btn{padding:8px 9px;font-size:13px;flex:none}
+    header .hd-txt{display:none}
+    main{padding:14px 12px}
+    .viewnav{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;margin:0 -12px 16px;padding:0 6px}
+    .viewnav::-webkit-scrollbar{display:none}
+    .vtab{white-space:nowrap;flex:none;padding:10px 12px 12px;font-size:13.5px}
+    #login{grid-template-columns:minmax(0,1fr);padding:16px}
+    .loginbox{width:100%;max-width:368px;justify-self:center;padding:28px 20px}
+    .login-marca span{white-space:normal}
+    .upload,.panel{padding:14px}
+    .stats{gap:8px}
+    .stat{padding:12px}
+    .stat .n{font-size:24px}
+    .filtros #relBusca{min-width:0;flex:1 1 100%}
+    .filtros input,.filtros select{max-width:100%}
+    .overlay{padding:0;align-items:stretch}
+    .modal{width:100vw;max-height:none;height:100%;border-radius:0}
+    .modal .head{padding:14px 14px}
+    .body{padding:14px}
+    .qual,.pform .pgrid{grid-template-columns:1fr}
+    .detgrid{columns:1}
+    .audiobar audio{min-width:0;width:100%}
+    .mkt-hero{padding:16px}
+    .tabs{overflow-x:auto;scrollbar-width:none}
+    .tab{white-space:nowrap;flex:none}
+    .btn,.chip,.per,.cardacts button{min-height:38px}
+    input,select,textarea{font-size:16px} /* evita o zoom automático do iPhone ao focar */
+  }
 </style>
 </head>
 <body>
+<div id="splash" aria-hidden="true"><div class="spl-box"><svg class="spl-logo" aria-label="ERA" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 127.60 23.68" fill="currentColor"><path d="M0.00 20.09L0.00 1.19C0.00 0.53 0.53 0.00 1.19 0.00L36.60 0.00C37.82 0.00 38.25 1.62 37.18 2.23L21.00 11.74C19.93 12.34 20.36 13.97 21.58 13.97L36.64 13.97C37.29 13.97 37.82 14.50 37.82 15.16L37.82 20.09C37.82 20.74 37.29 21.28 36.64 21.28L1.19 21.28C0.53 21.28 0.00 20.74 0.00 20.09M13.22 13.25L19.61 9.51C20.66 8.90 20.22 7.30 19.01 7.30L12.62 7.30C11.96 7.30 11.43 7.83 11.43 8.48L11.43 12.22C11.43 13.14 12.42 13.72 13.22 13.25Z" fill-rule="evenodd"/><path d="M79.51 23.35L59.62 14.92C58.92 14.62 58.68 13.75 59.12 13.13L61.62 9.22C62.19 8.43 61.62 7.33 60.66 7.33L52.49 7.36C51.83 7.36 51.22 7.90 51.22 8.55L51.22 20.09C51.22 20.74 50.69 21.28 50.03 21.28L40.98 21.28C40.33 21.28 39.79 20.74 39.79 20.09L39.79 1.19C39.79 0.53 40.33 0.00 40.98 0.00L78.41 0.00C79.38 0.00 79.94 1.10 79.38 1.88L74.13 9.22C73.67 9.86 73.94 10.76 74.68 11.03L80.39 13.42C80.86 13.60 81.16 14.04 81.16 14.54L81.16 22.25C81.16 23.10 80.29 23.68 79.51 23.35Z" fill-rule="evenodd"/><path d="M127.60 1.19L127.60 20.09C127.60 20.74 127.07 21.28 126.41 21.28L117.02 21.28C116.37 21.28 115.83 20.74 115.83 20.09L115.83 17.68C115.83 16.52 114.35 16.04 113.68 16.98L110.94 20.78C110.72 21.09 110.36 21.28 109.98 21.28L83.69 21.28C82.72 21.28 82.16 20.18 82.72 19.39L96.29 0.50C96.51 0.18 96.88 0.00 97.26 0.00L126.41 0.00C127.07 0.00 127.60 0.53 127.60 1.19M115.83 12.80L115.83 8.48C115.83 7.82 115.30 7.29 114.65 7.29L104.62 7.29C104.24 7.29 103.88 7.47 103.66 7.78L100.53 12.10C99.96 12.89 100.53 13.99 101.50 13.99L114.65 13.99C115.30 13.99 115.83 13.45 115.83 12.80Z" fill-rule="evenodd"/></svg><div class="spl-sub">Inteligência de Calls</div><div class="spl-barra"><i></i></div></div></div>
+<script>
+  // Abertura: completa na 1a visita da sessao (~1,5 s), curtinha nas seguintes. Sai quando a pagina termina de carregar.
+  (function(){ var s=document.getElementById("splash"); var ja=false;
+    try{ ja=sessionStorage.getItem("eraSplash")==="1"; sessionStorage.setItem("eraSplash","1") }catch(_){}
+    var t0=Date.now(), min=ja?350:1500;
+    function fecha(){ if(!s.isConnected) return; s.classList.add("sai"); setTimeout(function(){ s.remove() },700) }
+    function sair(){ setTimeout(fecha, Math.max(0, min-(Date.now()-t0))) }
+    if(document.readyState==="complete") sair(); else window.addEventListener("load", sair);
+    setTimeout(fecha, 6000); // nunca prende a tela
+  })();
+</script>
 
 <!-- LOGIN -->
 <div id="login">
   <form class="loginbox" onsubmit="entrar(event)">
-    <div class="logo">🎧</div>
-    <h1 style="font-size:26px;margin-top:14px">ERA · Inteligência de Calls</h1>
+    <div class="login-marca"><svg aria-label="ERA" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 127.60 23.68" fill="currentColor"><path d="M0.00 20.09L0.00 1.19C0.00 0.53 0.53 0.00 1.19 0.00L36.60 0.00C37.82 0.00 38.25 1.62 37.18 2.23L21.00 11.74C19.93 12.34 20.36 13.97 21.58 13.97L36.64 13.97C37.29 13.97 37.82 14.50 37.82 15.16L37.82 20.09C37.82 20.74 37.29 21.28 36.64 21.28L1.19 21.28C0.53 21.28 0.00 20.74 0.00 20.09M13.22 13.25L19.61 9.51C20.66 8.90 20.22 7.30 19.01 7.30L12.62 7.30C11.96 7.30 11.43 7.83 11.43 8.48L11.43 12.22C11.43 13.14 12.42 13.72 13.22 13.25Z" fill-rule="evenodd"/><path d="M79.51 23.35L59.62 14.92C58.92 14.62 58.68 13.75 59.12 13.13L61.62 9.22C62.19 8.43 61.62 7.33 60.66 7.33L52.49 7.36C51.83 7.36 51.22 7.90 51.22 8.55L51.22 20.09C51.22 20.74 50.69 21.28 50.03 21.28L40.98 21.28C40.33 21.28 39.79 20.74 39.79 20.09L39.79 1.19C39.79 0.53 40.33 0.00 40.98 0.00L78.41 0.00C79.38 0.00 79.94 1.10 79.38 1.88L74.13 9.22C73.67 9.86 73.94 10.76 74.68 11.03L80.39 13.42C80.86 13.60 81.16 14.04 81.16 14.54L81.16 22.25C81.16 23.10 80.29 23.68 79.51 23.35Z" fill-rule="evenodd"/><path d="M127.60 1.19L127.60 20.09C127.60 20.74 127.07 21.28 126.41 21.28L117.02 21.28C116.37 21.28 115.83 20.74 115.83 20.09L115.83 17.68C115.83 16.52 114.35 16.04 113.68 16.98L110.94 20.78C110.72 21.09 110.36 21.28 109.98 21.28L83.69 21.28C82.72 21.28 82.16 20.18 82.72 19.39L96.29 0.50C96.51 0.18 96.88 0.00 97.26 0.00L126.41 0.00C127.07 0.00 127.60 0.53 127.60 1.19M115.83 12.80L115.83 8.48C115.83 7.82 115.30 7.29 114.65 7.29L104.62 7.29C104.24 7.29 103.88 7.47 103.66 7.78L100.53 12.10C99.96 12.89 100.53 13.99 101.50 13.99L114.65 13.99C115.30 13.99 115.83 13.45 115.83 12.80Z" fill-rule="evenodd"/></svg><span>Inteligência de Calls</span></div>
+    <h1 style="font-size:26px;margin-top:22px">Bem-vindo de volta</h1>
     <p style="color:var(--muted);font-size:13px;margin:4px 0 18px">Entre para analisar suas reuniões</p>
     <label>E-mail</label><input id="email" type="email" autocomplete="username">
     <label>Senha</label><input id="senha" type="password" autocomplete="current-password">
@@ -366,11 +469,11 @@
     <div class="logo" style="width:42px;height:42px;font-size:20px">🎧</div>
     <div><h1>Inteligência de Calls</h1><div class="sub" id="userEmail"></div></div>
     <div class="spacer"></div>
-    <a class="btn btn-primary" href="gravador.html" target="_blank" style="text-decoration:none"><span class="recdot"></span> Gravar call</a>
-    <button class="btn btn-ghost" onclick="carregar()">↻ Atualizar</button>
+    <a class="btn btn-primary" href="gravador.html" target="_blank" style="text-decoration:none"><span class="recdot"></span><span class="hd-txt"> Gravar call</span></a>
+    <button class="btn btn-ghost" onclick="carregar()" title="Atualizar">↻<span class="hd-txt"> Atualizar</span></button>
     <button class="btn btn-soft" id="apBtn" onclick="toggleApresentar()" title="Modo apresentação">🖥️</button>
     <button class="btn btn-soft" id="themeBtn" onclick="toggleTema()" title="Alternar modo claro/escuro">🌙</button>
-    <button class="btn btn-soft" onclick="sair()">Sair</button>
+    <button class="btn btn-soft" onclick="sair()" title="Sair">⎋<span class="hd-txt"> Sair</span></button>
   </header>
   <main>
     <div class="viewnav">
@@ -844,16 +947,45 @@ function mdToHtml(md){
   close(); return html;
 }
 
-async function init(){ const {data:{session}}=await sb.auth.getSession(); if(session) mostrarApp(session.user); }
+async function init(){
+  const {data:{session}}=await sb.auth.getSession(); if(!session) return;
+  // O usuário da sessão guardada no navegador pode estar desatualizado (acesso mudado depois do login).
+  // getUser() pergunta ao servidor; se o acesso mudou, renova o token para as regras do banco também valerem.
+  const {data:{user},error}=await sb.auth.getUser();
+  if(error||!user){ await sb.auth.signOut(); return; }
+  if((user.app_metadata||{}).acesso!==((session.user.app_metadata||{}).acesso)) await sb.auth.refreshSession();
+  mostrarApp(user);
+}
 async function entrar(e){
   e.preventDefault();
   const email=document.getElementById('email').value, senha=document.getElementById('senha').value;
-  const {data,error}=await sb.auth.signInWithPassword({email,password:senha});
   const box=document.getElementById('loginErr');
-  if(error){ box.textContent='E-mail ou senha incorretos.'; box.classList.remove('hidden'); return; }
-  mostrarApp(data.user);
+  const btn=e.target.querySelector('button[type=submit]'); const txt=btn.textContent;
+  btn.classList.add('carregando'); btn.textContent=' Entrando…'; box.classList.add('hidden');
+  try{ await entrarDeFato(email,senha,box); } finally { btn.classList.remove('carregando'); btn.textContent=txt; }
+}
+async function entrarDeFato(email,senha,box){
+  // Login pela Edge Function oa-login: conta as senhas erradas e bloqueia na 3ª.
+  const {data:r,error:ferr}=await sb.functions.invoke('oa-login',{body:{email,senha}});
+  let resp=r; if(ferr){ try{resp=await ferr.context.json()}catch(_){ resp={erro:'Não deu para entrar agora. Tente de novo.'} } }
+  if(resp&&resp.access_token){
+    const {data,error}=await sb.auth.setSession({access_token:resp.access_token,refresh_token:resp.refresh_token});
+    if(!error&&data.user){ mostrarApp(data.user); return; }
+    resp={erro:'Não deu para abrir a sessão. Tente de novo.'};
+  }
+  if(resp&&resp.bloqueado){
+    const assunto=encodeURIComponent('Acesso bloqueado - Inteligência de Calls');
+    const corpo=encodeURIComponent('Oi Dudu, meu acesso à Inteligência de Calls ('+email+') está bloqueado. Pode verificar?');
+    box.innerHTML='🔒 <b>'+(resp.automatico?'Acesso bloqueado após 3 tentativas com senha errada.':'Seu acesso está bloqueado.')+'</b><br>Fale com o <b>Dudu</b> para liberar: '
+      +'<a href="mailto:eduarjose.fajardo@era.com.br?subject='+assunto+'&body='+corpo+'" style="color:inherit;text-decoration:underline">eduarjose.fajardo@era.com.br</a>';
+  } else {
+    const r2=resp&&resp.restantes;
+    box.textContent=((resp&&resp.erro)||'E-mail ou senha incorretos.')+(r2?(' '+(r2===1?'Última tentativa antes do bloqueio.':'Restam '+r2+' tentativas.')):'');
+  }
+  box.classList.remove('hidden');
 }
 function mostrarApp(user){
+  if(user && user.app_metadata && user.app_metadata.acesso==='oa'){ location.replace('/operacao-assistida/'); return; }
   USER=user;
   document.getElementById('login').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');

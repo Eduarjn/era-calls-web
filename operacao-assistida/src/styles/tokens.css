@@ -79,6 +79,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent2)
 
 /* Abas do menu principal — idênticas às da Calls */
 .viewnav{display:flex;gap:2px;margin-bottom:22px;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+/* Com zoom alto as abas rolam para o lado: barra de rolagem fina */
+.viewnav{scrollbar-width:thin;scrollbar-color:var(--line) transparent}
 .vtab{padding:10px 16px 12px;background:transparent;color:var(--muted);border:none;cursor:pointer;font-weight:600;font-size:14px;font-family:var(--font-sans);position:relative;transition:color .15s;text-decoration:none}
 .vtab:hover{color:var(--navy)}
 .vtab::after{content:'';position:absolute;left:12px;right:12px;bottom:-1px;height:3px;background:var(--accent);transform:scaleX(0);transform-origin:left;transition:transform .22s cubic-bezier(.2,.8,.2,1)}
@@ -93,5 +95,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent2)
 
 .viewfade{animation:viewIn .4s cubic-bezier(.2,.8,.2,1) both}
 @keyframes viewIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* Card urgente (em risco + prioridade alta/crítica): contorno vermelho que respira.
+   Com movimento reduzido fica só o contorno fixo. */
+.oa-urgente{box-shadow:0 0 0 2px color-mix(in srgb,var(--red) 55%,transparent),var(--shadow);animation:oaPulso 2.4s ease-in-out infinite}
+@keyframes oaPulso{0%,100%{box-shadow:0 0 0 2px color-mix(in srgb,var(--red) 55%,transparent),var(--shadow)}50%{box-shadow:0 0 0 5px color-mix(in srgb,var(--red) 22%,transparent),var(--shadow)}}
 
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}}

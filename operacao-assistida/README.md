@@ -1,6 +1,6 @@
 # Operação Assistida — módulo da Inteligência de Calls
 
-Acompanhamento dos 30 dias pós-implantação: um card por cliente, fases por semana,
+Acompanhamento pós-implantação (desde 24/09/2026: Kick-off + 2 semanas, ciclo de 16 dias): um card por cliente, fases por semana,
 histórico de acionamentos, avanço automático por tempo, calendário, painel e integração com o Movidesk.
 
 Servido em **`/operacao-assistida/`** ao lado do `index.html` da Inteligência de Calls.
@@ -27,7 +27,7 @@ com as páginas estáticas + este app em `public_build/operacao-assistida/`. Dep
 | Situação | O que acontece |
 |---|---|
 | Tabelas `oa_*` **não** existem | módulo usa `MockRepository` (memória) e mostra a faixa "Dados de exemplo" |
-| Tabelas existem | módulo usa `SupabaseRepository` automaticamente; primeiro acesso da empresa semeia o board padrão com as 6 fases |
+| Tabelas existem | módulo usa `SupabaseRepository` automaticamente; primeiro acesso da empresa semeia o board padrão (Kick-off + Semana 1 + Semana 2 + Finalização) |
 
 Para ativar o banco: cole **`supabase/oa_schema.sql`** no SQL Editor do projeto `lhncmqqnyxqkxfhiafaz` e clique RUN.
 É idempotente. Cria `oa_boards`, `oa_fases`, `oa_cards`, `oa_eventos`, `oa_templates`, `oa_visoes`, `oa_integracoes`,
@@ -59,6 +59,34 @@ src/
 5. ✅ Visões — Kanban · Lista (ordenação, colunas, edição inline, lote, CSV/XLSX) · Linha do tempo · Calendário (mês/semana/agenda, entradas × saídas, saldo) · Painel; busca + filtros combináveis + visões salvas; última visão lembrada por usuário
 6. ✅ Gerenciamento — editor de fases (drag, cor, duração, regra, WIP, checklist, arquivar, excluir com destino), ciclo/fuso/automação, templates (salvar / criar quadro), campos customizados, importação em lote (colar/CSV, prévia, mapeamento automático), duplicar
 7. ✅ Integração — provider desacoplado, tela de configuração, vínculo de pessoa/organização, tickets no card, importar tickets como histórico (sem duplicar), criar ticket, sincronização manual/agendada/webhook, erro sempre visível
+
+### Esteira de 2 semanas, cores e responsável (24/09/2026)
+- Padrão: Entrada/Kick-off (2 d) → Semana 1 (7 d) → Semana 2 (7 d) → Finalização; uma cor por etapa (azul, ciano, verde, roxo).
+- Quadro antigo de 4 semanas é ajustado sozinho na 1ª abertura (`features/board/migracao2s.ts`): Semana 3/4 arquivadas,
+  cards delas para a Semana 2, ciclo 16 d, saída prevista recalculada só onde seguia o ciclo antigo. Marca `esteiraVersao='2s'`;
+  quadros criados por template já nascem marcados (o de 30 dias continua disponível).
+- Cor do card e responsável sem login ficam em `camposCustomizados` (`_cor`, `_responsavel_nome`) — sem migração de banco.
+  Responsável: usuário da plataforma (tabela `perfis` da empresa) ou "Outro (digitar nome)".
+
+### Kick-off de 1 semana (02/10/2026)
+- Kick-off passou de 2 para **7 dias** (acompanhamento preliminar antes da Semana 1); ciclo padrão **21 d** (`KICKOFF_DIAS`, `CICLO_2_SEMANAS` em `domain/seed.ts`).
+- Quadro no ar é ajustado sozinho na 1ª abertura (`ajustarEsteira` em `features/board/migracao2s.ts`): Kick-off → 7 d, cards ativos
+  e não fixados que estavam na Semana 1 com menos de 7 dias desde a entrada voltam para o Kick-off (com evento no histórico),
+  saída prevista 16 → 21 d só onde seguia o ciclo antigo. Marca `esteiraVersao='2s-k7'`. Quadros de 30/60 dias não são mexidos.
+
+### Vendedor, TIP e integração (05/10/2026)
+Três dados comerciais por cliente, pedidos para a reunião de acompanhamento (`src/domain/comercial.ts`):
+**vendedor interno** (Nicole · Junior Salim · Gustavo), **cliente da TIP** (parceiro) e **integração** (sim/não + qual).
+
+- Guardados em `camposCustomizados` com chave reservada (`_vendedor`, `_tip`, `_integracao`, `_integracao_qual`),
+  do mesmo jeito que a cor e o responsável digitado: **sem migração de banco** e sem virar campo customizado do board.
+- Aparecem como selo no card do kanban, bloco "Comercial" no painel do cliente, três colunas com edição inline na Lista
+  (e ação em lote para vendedor e TIP), três filtros na barra (Vendedor · Origem · Integração), na busca livre,
+  na exportação CSV/XLSX e no mapeamento da importação em lote (aceita "sim/s/x/1" e casa o primeiro nome do vendedor).
+- Para mudar quem são os vendedores internos, edite `VENDEDORES_INTERNOS` em `domain/comercial.ts`.
+- Preenchimento é **manual**. O vendedor e a origem TIP também existem no assunto do ticket do Movidesk
+  (`código | TIPO | cliente | vendedor`, ver `ERAREASON/movidesk_sync.py`) e a integração aparece como categoria/serviço
+  "Integração" e "Ativação de CRM" — é de lá que dá para preencher sozinho mais adiante.
 
 ### Regras de tempo (`src/domain/esteira.ts`)
 - **Fase esperada** = dias desde `dataEntrada` percorrendo `duracaoDias` das fases de entrada/andamento. Fase com regra `nunca` segura o card. Passou do fim → *aguardando finalização* (o sistema não finaliza sozinho).

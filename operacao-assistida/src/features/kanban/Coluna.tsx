@@ -5,6 +5,7 @@ import { animate, motion, useMotionValue, useReducedMotion } from 'framer-motion
 import type { Card, Fase, Usuario } from '@/domain/types'
 import { CardSortable, type Derivados } from './CardKanban'
 import { QuickAdd } from './QuickAdd'
+import { COR_SAUDE } from '@/domain/destaque'
 
 interface Props {
   fase: Fase
@@ -43,6 +44,8 @@ export function Coluna({
   const ativos = cards.filter((c) => c.status !== 'finalizado')
   const estourou = fase.limiteWIP != null && ativos.length > fase.limiteWIP
   const porId = new Map(usuarios.map((u) => [u.id, u]))
+  const emRisco = ativos.filter((c) => derivados.get(c.id)?.saude === 'vermelho').length
+  const emAtencao = ativos.filter((c) => derivados.get(c.id)?.saude === 'amarelo').length
 
   if (colapsada) {
     return (
@@ -51,9 +54,10 @@ export function Coluna({
         onClick={onAlternarColapso}
         title={`Expandir ${fase.nome}`}
         className={`shrink-0 w-11 rounded-box bg-soft3 border border-line flex flex-col items-center gap-3 py-3 hover:border-accent2 transition-colors ${isOver ? 'border-accent2 bg-accent2/5' : ''}`}
-        style={{ boxShadow: `inset 0 3px 0 ${fase.cor}` }}
+        style={{ boxShadow: `inset 0 4px 0 ${fase.cor}`, background: fase.cor + '1a' }}
       >
         <span className="font-mono text-[12px] font-semibold rounded-badge px-1.5 py-0.5" style={{ background: fase.cor + '22', color: fase.cor }}>{cards.length}</span>
+        {emRisco > 0 && <span className="font-mono text-[11px] font-semibold rounded-badge px-1 py-0.5 text-white" style={{ background: COR_SAUDE.vermelho }} title={`${emRisco} em risco`}>{emRisco}</span>}
         <span className="font-mono text-[10.5px] uppercase tracking-[.08em] text-navy font-semibold [writing-mode:vertical-rl] rotate-180">{fase.nome}</span>
       </button>
     )
@@ -64,21 +68,30 @@ export function Coluna({
       ref={setNodeRef}
       aria-label={`Fase ${fase.nome}`}
       className={[
-        'shrink-0 w-[280px] max-md:w-[86vw] snap-start rounded-box bg-soft3 border flex flex-col max-h-[calc(100vh-250px)] transition-[border-color,background-color,box-shadow] duration-150',
+        'shrink-0 w-[270px] max-[560px]:w-[86vw] snap-start rounded-box bg-soft3 border flex flex-col max-h-[max(420px,calc(100dvh-230px))] transition-[border-color,background-color,box-shadow] duration-150',
         isOver ? 'border-accent2 bg-accent2/5 shadow-[0_0_0_3px_rgba(68,123,190,.18)]' : 'border-line',
       ].join(' ')}
-      style={{ boxShadow: isOver ? undefined : `inset 0 3px 0 ${fase.cor}` }}
+      style={{ boxShadow: isOver ? undefined : `inset 0 4px 0 ${fase.cor}`, borderColor: isOver ? undefined : fase.cor + '55' }}
     >
-      <header className="px-3 pt-3 pb-2.5 flex items-center gap-2 border-b border-line">
+      <header
+        className="px-3 pt-3 pb-2.5 flex items-center gap-2 border-b rounded-t-box"
+        style={{ background: `linear-gradient(180deg, ${fase.cor}3d, ${fase.cor}14)`, borderColor: fase.cor + '55' }}
+      >
         <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: fase.cor }} aria-hidden />
-        <span className="font-mono text-[11px] uppercase tracking-[.08em] text-navy font-semibold truncate" title={fase.duracaoDias ? `${fase.duracaoDias} dias nesta fase` : undefined}>{fase.nome}</span>
+        <span className="font-mono text-[11px] uppercase tracking-[.08em] font-semibold truncate min-w-0" style={{ color: fase.cor }} title={fase.duracaoDias ? `${fase.duracaoDias} dias nesta fase` : undefined}>{fase.nome}</span>
         <span
-          className={`font-mono text-[11.5px] font-semibold rounded-badge px-1.5 py-0.5 ${estourou ? 'bg-red/12 text-red' : ''}`}
+          className={`shrink-0 font-mono text-[11.5px] font-semibold rounded-badge px-1.5 py-0.5 ${estourou ? 'bg-red/12 text-red' : ''}`}
           style={estourou ? undefined : { background: fase.cor + '22', color: fase.cor }}
           title={estourou ? `Limite de ${fase.limiteWIP} ultrapassado` : `${cards.length} cliente(s)`}
         >
           <Contador valor={cards.length} />{fase.limiteWIP != null && <span className="opacity-60">/{fase.limiteWIP}</span>}
         </span>
+        {(emRisco > 0 || emAtencao > 0) && (
+          <span className="flex items-center gap-1 shrink-0 whitespace-nowrap" aria-label={`${emRisco} em risco, ${emAtencao} em atenção`}>
+            {emRisco > 0 && <span className="font-mono text-[10.5px] font-semibold rounded-badge px-1 py-0.5 text-white" style={{ background: COR_SAUDE.vermelho }} title={`${emRisco} cliente(s) em risco nesta fase`}>⬤ {emRisco}</span>}
+            {emAtencao > 0 && <span className="font-mono text-[10.5px] font-semibold rounded-badge px-1 py-0.5" style={{ background: 'color-mix(in srgb, var(--amber) 16%, transparent)', color: COR_SAUDE.amarelo }} title={`${emAtencao} cliente(s) em atenção nesta fase`}>⚠ {emAtencao}</span>}
+          </span>
+        )}
         <span className="ml-auto flex items-center gap-0.5">
           <button className="w-7 h-7 grid place-items-center rounded-ctl text-muted hover:text-navy hover:bg-card2 text-[16px] leading-none" onClick={() => onAbrirQuickAdd(!quickAddAberto)} title="Novo cliente nesta fase" aria-label={`Novo cliente em ${fase.nome}`}>+</button>
           <button className="w-7 h-7 grid place-items-center rounded-ctl text-muted hover:text-navy hover:bg-card2 text-[13px]" onClick={onAlternarColapso} title="Recolher coluna" aria-label="Recolher coluna">‹</button>

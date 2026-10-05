@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { getRepository } from '@/data'
 import type { Card, Fase, NovoCard, PatchCard } from '@/domain/types'
+import { faseEsperada } from '@/domain/esteira'
 import { useUI } from '@/store/uiStore'
 import { chaves } from './useBoard'
 
@@ -34,7 +35,10 @@ export function useMoverCard(boardId: string, fases: Fase[]) {
       const repo = getRepository()
       const de = fases.find((f) => f.id === card.faseId)
       const para = fases.find((f) => f.id === paraFaseId)
-      const atualizado = await repo.atualizarCard(card.id, { faseId: paraFaseId, dataEntradaNaFase: agoraISO() })
+      // Movimento manual fixa o card: senão a reconciliação por tempo o devolve à fase esperada no próximo carregamento.
+      // Levado de volta à fase esperada, volta a seguir a esteira sozinho.
+      const travadoManualmente = faseEsperada(card, fases)?.faseId !== paraFaseId
+      const atualizado = await repo.atualizarCard(card.id, { faseId: paraFaseId, dataEntradaNaFase: agoraISO(), travadoManualmente })
       await repo.criarEvento({
         cardId: card.id, tipo: 'mudanca_de_fase',
         titulo: `Movido de ${de?.nome ?? '—'} para ${para?.nome ?? '—'}`,
@@ -44,7 +48,7 @@ export function useMoverCard(boardId: string, fases: Fase[]) {
       return { atualizado, silencioso }
     },
     onMutate: async ({ card, paraFaseId }) =>
-      o.aplicar((cards) => cards.map((c) => (c.id === card.id ? { ...c, faseId: paraFaseId, dataEntradaNaFase: agoraISO() } : c))),
+      o.aplicar((cards) => cards.map((c) => (c.id === card.id ? { ...c, faseId: paraFaseId, dataEntradaNaFase: agoraISO(), travadoManualmente: faseEsperada(card, fases)?.faseId !== paraFaseId } : c))),
     onError: (_e, _v, anterior) => {
       o.reverter(anterior)
       notificar({ mensagem: 'Não deu para mover o cliente. Tente de novo.' })

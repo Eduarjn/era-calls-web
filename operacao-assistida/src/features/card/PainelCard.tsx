@@ -10,14 +10,24 @@ import { noFuso } from '@/domain/datas'
 import { faseEsperada } from '@/domain/esteira'
 import { useUI } from '@/store/uiStore'
 import { useAtualizarCard, useCriarCard, useExcluirCard, useMoverCard } from '@/features/board/mutations'
-import { useUsuarioAtual } from '@/features/board/useBoard'
+import { usePermissao, useUsuarioAtual } from '@/features/board/useBoard'
 import type { Derivados } from '@/features/kanban/CardKanban'
 import { RegistroRapido } from '@/features/historico/RegistroRapido'
 import { Timeline } from '@/features/historico/Timeline'
 import { ProximaAcao } from '@/features/historico/ProximaAcao'
 import { chaveEventos, useExcluirEvento } from '@/features/historico/mutations'
 import { BlocoIntegracao } from '@/features/integracao/BlocoIntegracao'
+import { BlocoTicketMovidesk } from '@/features/integracao/TicketMovidesk'
 import { Avatar, Badge } from '@/ui/Badge'
+import { nomeResponsavel } from '@/domain/cardExtras'
+import { BlocoComercial, SeletorCorCard, SeletorResponsavel } from './CamposExtrasCard'
+import { COR_PRIORIDADE, COR_SAUDE, ICONE_PRIORIDADE, ICONE_SAUDE } from '@/domain/destaque'
+
+/** Select tingido pela cor do valor escolhido (saúde / prioridade). */
+const tingido = (cor: string, forte: boolean) => ({
+  borderLeft: `5px solid ${cor}`,
+  ...(forte ? { background: `color-mix(in srgb, ${cor} 12%, var(--bg2))`, color: cor, fontWeight: 600 } : {}),
+})
 
 interface Props {
   board: Board
@@ -55,6 +65,7 @@ export function PainelCard({ board, cards, usuarios, derivados }: Props) {
   const excluir = useExcluirCard(board.id)
   const criar = useCriarCard(board.id)
   const usuarioAtual = useUsuarioAtual()
+  const { somenteLeitura } = usePermissao()
   const camposExtras = board.configuracoes.camposCustomizados ?? []
   const excluirEvento = useExcluirEvento(card?.id ?? '')
 
@@ -88,24 +99,26 @@ export function PainelCard({ board, cards, usuarios, derivados }: Props) {
           <motion.aside
             key="painel"
             role="dialog" aria-modal="true" aria-label={`Cliente ${card.clienteNome}`}
-            className="fixed top-0 right-0 z-40 h-full w-full max-w-[560px] bg-modal border-l border-line shadow-lift flex flex-col"
+            className="fixed top-0 right-0 z-40 h-full h-[100dvh] w-full max-w-[min(560px,100vw)] bg-modal border-l border-line shadow-lift flex flex-col"
             initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
             transition={{ type: 'spring', stiffness: 380, damping: 38 }}
           >
             {/* Cabeçalho */}
-            <div className="px-5 pt-4 pb-0 border-b border-line" style={{ boxShadow: `inset 0 3px 0 ${fases.find((f) => f.id === card.faseId)?.cor ?? 'var(--accent)'}` }}>
+            <div className="px-4 sm:px-5 pt-4 pb-0 border-b border-line transition-shadow duration-300" style={{ boxShadow: `inset 0 5px 0 ${der && !finalizado ? COR_SAUDE[der.saude] : 'var(--line)'}` }}>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-mono text-[11px] text-muted">{card.codigo}</span>
                 {finalizado
                   ? <Badge cor="neutro">✓ {ROTULO_RESULTADO[card.resultadoFinal ?? 'estabilizado']}</Badge>
                   : <Badge cor={badgePrazo(card).cor}>{badgePrazo(card).rotulo}</Badge>}
-                {der && !finalizado && <Badge cor={der.saude === 'verde' ? 'verde' : der.saude === 'amarelo' ? 'amarelo' : 'vermelho'}>● {ROTULO_SAUDE[der.saude]}</Badge>}
+                {der && !finalizado && <Badge cor={der.saude === 'verde' ? 'verde' : der.saude === 'amarelo' ? 'amarelo' : 'vermelho'}>{ICONE_SAUDE[der.saude]} {ROTULO_SAUDE[der.saude]}{card.saudeManual ? ' ✋' : ''}</Badge>}
+                {!finalizado && (card.prioridade === 'alta' || card.prioridade === 'critica') && <Badge cor={card.prioridade === 'critica' ? 'vermelho' : 'amarelo'}>{ICONE_PRIORIDADE[card.prioridade]} {ROTULO_PRIORIDADE[card.prioridade]}</Badge>}
                 {card.travadoManualmente && <Badge cor="neutro">📌 fixado</Badge>}
                 <span className="flex-1" />
                 <button className="btn btn-soft btn-sm" onClick={fechar} aria-label="Fechar painel">Esc ✕</button>
               </div>
               <input
                 className="!border-transparent !bg-transparent !px-0 !py-1 !text-[20px] font-bold !text-navy mt-1 focus:!border-line"
+                readOnly={somenteLeitura}
                 defaultValue={card.clienteNome}
                 key={card.id + card.clienteNome}
                 onBlur={(e) => { const v = e.target.value.trim(); if (v && v !== card.clienteNome) patch({ clienteNome: v }) }}
@@ -120,7 +133,8 @@ export function PainelCard({ board, cards, usuarios, derivados }: Props) {
               </nav>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-4">
+            <fieldset disabled={somenteLeitura} className="contents">
+            <div className="@container flex-1 overflow-y-auto px-4 sm:px-5 py-4 flex flex-col gap-4">
               {/* Situação na esteira (sempre visível) */}
               {finalizado ? (
                 <div className="rounded-box border border-line bg-soft2 p-3.5 text-[13px]">
@@ -155,20 +169,30 @@ export function PainelCard({ board, cards, usuarios, derivados }: Props) {
 
               {aba === 'dados' && (
                 <>
+                  <BlocoTicketMovidesk card={card} boardId={board.id} fuso={fuso} />
+
                   {!finalizado && (
                     <ProximaAcao key={card.id + (card.proximaAcao?.dataPrazo ?? '')} card={card} usuarios={usuarios} usuarioAtual={usuarioAtual.data ?? undefined} boardId={board.id} fuso={fuso} onRegistrar={registrarDaAcao} />
                   )}
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <Campo rotulo="Fase">
-                      <select value={card.faseId} disabled={finalizado} onChange={(e) => mover.mutate({ card, paraFaseId: e.target.value })}>
-                        {fases.map((f) => <option key={f.id} value={f.id}>{f.nome}</option>)}
+                  <div className="grid grid-cols-1 @min-[400px]:grid-cols-2 gap-3">
+                    <Campo rotulo="Prioridade">
+                      <select value={card.prioridade} style={tingido(COR_PRIORIDADE[card.prioridade], card.prioridade === 'alta' || card.prioridade === 'critica')} onChange={(e) => patch({ prioridade: e.target.value as Card['prioridade'] })}>
+                        {(Object.keys(ROTULO_PRIORIDADE) as Card['prioridade'][]).map((p) => <option key={p} value={p}>{ICONE_PRIORIDADE[p]} {ROTULO_PRIORIDADE[p]}</option>)}
                       </select>
                     </Campo>
-                    <Campo rotulo="Responsável">
-                      <select value={card.responsavelId ?? ''} onChange={(e) => patch({ responsavelId: e.target.value || undefined })}>
-                        <option value="">Sem responsável</option>
-                        {usuarios.map((u) => <option key={u.id} value={u.id}>{u.nome}</option>)}
+                    <Campo rotulo={card.saudeManual ? 'Saúde (manual ✋)' : 'Saúde (automática)'}>
+                      <select value={card.saudeManual ?? 'auto'} style={der ? tingido(COR_SAUDE[der.saude], der.saude !== 'verde') : undefined} onChange={(e) => patch({ saudeManual: e.target.value === 'auto' ? undefined : (e.target.value as Card['saude']) })}>
+                        <option value="auto">Automática · {der ? ROTULO_SAUDE[der.saude] : '—'}</option>
+                        {(Object.keys(ROTULO_SAUDE) as Card['saude'][]).map((s) => <option key={s} value={s}>Forçar: {ROTULO_SAUDE[s]}</option>)}
+                      </select>
+                    </Campo>
+                    <Campo rotulo="Responsável" largo>
+                      <SeletorResponsavel card={card} usuarios={usuarios} onPatch={patch} />
+                    </Campo>
+                    <Campo rotulo="Fase" largo>
+                      <select value={card.faseId} disabled={finalizado} onChange={(e) => mover.mutate({ card, paraFaseId: e.target.value })}>
+                        {fases.map((f) => <option key={f.id} value={f.id}>{f.nome}</option>)}
                       </select>
                     </Campo>
                     <Campo rotulo="Entrada">
@@ -177,17 +201,13 @@ export function PainelCard({ board, cards, usuarios, derivados }: Props) {
                     <Campo rotulo="Saída prevista">
                       <input type="date" value={paraInputDate(card.dataPrevistaSaida, fuso)} onChange={(e) => e.target.value && patch({ dataPrevistaSaida: new Date(e.target.value + 'T00:00:00').toISOString() })} />
                     </Campo>
-                    <Campo rotulo="Prioridade">
-                      <select value={card.prioridade} onChange={(e) => patch({ prioridade: e.target.value as Card['prioridade'] })}>
-                        {(Object.keys(ROTULO_PRIORIDADE) as Card['prioridade'][]).map((p) => <option key={p} value={p}>{ROTULO_PRIORIDADE[p]}</option>)}
-                      </select>
-                    </Campo>
-                    <Campo rotulo={card.saudeManual ? 'Saúde (manual)' : 'Saúde (automática)'}>
-                      <select value={card.saudeManual ?? 'auto'} onChange={(e) => patch({ saudeManual: e.target.value === 'auto' ? undefined : (e.target.value as Card['saude']) })}>
-                        <option value="auto">Automática · {der ? ROTULO_SAUDE[der.saude] : '—'}</option>
-                        {(Object.keys(ROTULO_SAUDE) as Card['saude'][]).map((s) => <option key={s} value={s}>Forçar: {ROTULO_SAUDE[s]}</option>)}
-                      </select>
-                    </Campo>
+                  </div>
+
+                  <BlocoComercial card={card} onPatch={patch} />
+
+                  <div>
+                    <span className="lbl block mb-1.5">Cor do card</span>
+                    <SeletorCorCard card={card} onPatch={patch} />
                   </div>
 
                   <div className="flex flex-wrap gap-4">
@@ -201,27 +221,6 @@ export function PainelCard({ board, cards, usuarios, derivados }: Props) {
                     </label>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <Campo rotulo="Contato principal">
-                      <input defaultValue={card.contatoPrincipal?.nome ?? ''} key={'cn' + card.id} placeholder="Nome" onBlur={(e) => patch({ contatoPrincipal: { ...card.contatoPrincipal, nome: e.target.value } })} />
-                    </Campo>
-                    <Campo rotulo="E-mail">
-                      <input defaultValue={card.contatoPrincipal?.email ?? ''} key={'ce' + card.id} placeholder="email@cliente.com" onBlur={(e) => patch({ contatoPrincipal: { nome: card.contatoPrincipal?.nome ?? '', ...card.contatoPrincipal, email: e.target.value } })} />
-                    </Campo>
-                    <Campo rotulo="Telefone">
-                      <input defaultValue={card.contatoPrincipal?.telefone ?? ''} key={'ct' + card.id} placeholder="(00) 00000-0000" onBlur={(e) => patch({ contatoPrincipal: { nome: card.contatoPrincipal?.nome ?? '', ...card.contatoPrincipal, telefone: e.target.value } })} />
-                    </Campo>
-                    <Campo rotulo="Id externo (Movidesk)">
-                      <input defaultValue={card.clienteId ?? ''} key={'ci' + card.id} placeholder="—" onBlur={(e) => patch({ clienteId: e.target.value || undefined })} />
-                    </Campo>
-                    <Campo rotulo="Segmento">
-                      <input defaultValue={card.segmento ?? ''} key={'sg' + card.id} onBlur={(e) => patch({ segmento: e.target.value })} />
-                    </Campo>
-                    <Campo rotulo="Produto / plano">
-                      <input defaultValue={card.produtoPlano ?? ''} key={'pp' + card.id} onBlur={(e) => patch({ produtoPlano: e.target.value })} />
-                    </Campo>
-                  </div>
-
                   <BlocoIntegracao card={card} boardId={board.id} usuarioAtual={usuarioAtual.data ?? undefined} />
 
                   <Campo rotulo="Tags (separadas por vírgula)">
@@ -229,7 +228,7 @@ export function PainelCard({ board, cards, usuarios, derivados }: Props) {
                   </Campo>
 
                   {camposExtras.length > 0 && (
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 @min-[400px]:grid-cols-2 gap-3">
                       {camposExtras.map((cc) => {
                         const v = card.camposCustomizados[cc.chave]
                         const set = (nv: string | number | boolean | null) => patch({ camposCustomizados: { ...card.camposCustomizados, [cc.chave]: nv } })
@@ -269,18 +268,21 @@ export function PainelCard({ board, cards, usuarios, derivados }: Props) {
                 </>
               )}
             </div>
+            </fieldset>
 
             {/* Rodapé */}
-            <div className="px-5 py-3 border-t border-line flex items-center gap-2 text-[12px] text-muted">
-              <Avatar nome={usuarios.find((u) => u.id === card.responsavelId)?.nome ?? '—'} tamanho={20} />
+            <div className="px-4 sm:px-5 py-3 border-t border-line flex items-center gap-2 flex-wrap text-[12px] text-muted">
+              <Avatar nome={nomeResponsavel(card, usuarios) ?? '—'} tamanho={20} />
               <span>Entrou em {fmt(card.dataEntrada, fuso)} · sai em {fmt(card.dataPrevistaSaida, fuso)}</span>
               <span className="flex-1" />
+              {!somenteLeitura && <>
               <button className="btn btn-soft btn-sm" title="Cria uma cópia com entrada hoje" onClick={async () => {
                 const { id: _id, codigo: _c, criadoEm: _cr, atualizadoEm: _at, dataEntrada: _de, dataPrevistaSaida: _dp, dataSaidaReal: _ds, dataEntradaNaFase: _df, checklist: _ck, status: _st, resultadoFinal: _rf, justificativaResultado: _jr, ...resto } = card
                 const novo = await criar.mutateAsync({ ...resto, boardId: card.boardId, faseId: fases[0]?.id ?? card.faseId, clienteNome: `${card.clienteNome} (cópia)` })
                 useUI.getState().abrirCard(novo.id)
               }}>Duplicar</button>
               <button className="btn btn-soft btn-sm !text-red" onClick={() => { if (confirm(`Excluir ${card.clienteNome}? Dá para desfazer logo em seguida.`)) { excluir.mutate(card); fechar() } }}>Excluir</button>
+              </>}
             </div>
           </motion.aside>
         </>
@@ -289,9 +291,9 @@ export function PainelCard({ board, cards, usuarios, derivados }: Props) {
   )
 }
 
-function Campo({ rotulo, children }: { rotulo: string; children: React.ReactNode }) {
+function Campo({ rotulo, children, largo }: { rotulo: string; children: React.ReactNode; largo?: boolean }) {
   return (
-    <label className="block">
+    <label className={`block min-w-0 ${largo ? '@min-[400px]:col-span-2' : ''}`}>
       <span className="lbl block mb-1.5">{rotulo}</span>
       {children}
     </label>
